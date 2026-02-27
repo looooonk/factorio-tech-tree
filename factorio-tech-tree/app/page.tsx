@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import TechGraph from "./tech-graph";
 
 type TechNode = {
   id: string;
@@ -9,15 +10,30 @@ type TechNode = {
   image_path?: string;
 };
 
-type LayeredTech = {
-  layers: TechNode[][];
-  levels: Map<string, number>;
-  rootIds: Set<string>;
+type GraphNode = {
+  id: string;
+  title: string;
+  image_path?: string;
+  prerequisites: string[];
+  level: number;
+};
+
+type GraphEdge = {
+  id: string;
+  from: string;
+  to: string;
+};
+
+type TechTreeData = {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  root_ids: string[];
+  max_level: number;
 };
 
 const dataPath = path.join(process.cwd(), "data", "tech_tree.jsonl");
 
-async function loadTechTree(): Promise<LayeredTech> {
+async function loadTechTree(): Promise<TechTreeData> {
   const raw = await fs.readFile(dataPath, "utf-8");
   const nodes = raw
     .split("\n")
@@ -69,91 +85,58 @@ async function loadTechTree(): Promise<LayeredTech> {
   }
 
   const maxLevel = Math.max(...Array.from(levels.values()));
-  const layers: TechNode[][] = Array.from(
-    { length: maxLevel + 1 },
-    () => [],
-  );
+  const graph_nodes: GraphNode[] = nodes.map((node) => ({
+    id: node.id,
+    title: node.title,
+    image_path: node.image_path,
+    prerequisites:
+      node.required_technologies_merged ?? node.required_technologies ?? [],
+    level: levels.get(node.id) ?? 0,
+  }));
+  const edges: GraphEdge[] = [];
 
-  for (const [id, level] of levels.entries()) {
-    const node = nodesById.get(id);
-    if (!node) {
-      continue;
+  for (const node of graph_nodes) {
+    for (const dependency of node.prerequisites) {
+      if (!nodesById.has(dependency)) {
+        continue;
+      }
+      edges.push({
+        id: `${dependency}::${node.id}`,
+        from: dependency,
+        to: node.id,
+      });
     }
-    layers[level].push(node);
   }
 
-  for (const layer of layers) {
-    layer.sort((a, b) => a.title.localeCompare(b.title));
-  }
-
-  return { layers, levels, rootIds };
-}
-
-function formatTitle(title: string) {
-  return title.replace(/\s*\(research\)\s*$/i, "").trim();
+  return {
+    nodes: graph_nodes,
+    edges,
+    root_ids: Array.from(rootIds),
+    max_level: maxLevel,
+  };
 }
 
 export default async function Home() {
-  const { layers, levels, rootIds } = await loadTechTree();
-  const totalNodes = Array.from(levels.keys()).length;
-  const totalLayers = layers.length;
+  const { nodes, edges, root_ids, max_level } = await loadTechTree();
+  const totalNodes = nodes.length;
+  const totalLayers = max_level + 1;
   return (
     <div className="page">
       <header className="header">
         <div className="title">Factorio Tech Tree</div>
         <div className="subtitle">
-          Each row represents the distance from the root technologies. Scroll
-          horizontally within a row to explore the full layer.
+          Explore the full dependency graph. Drag to pan, scroll to zoom, and
+          click nodes or edges to trace incoming and outgoing links.
         </div>
         <div className="summary">
           <span>{totalNodes} techs</span>
           <span>{totalLayers} layers</span>
-          <span>{rootIds.size} roots</span>
+          <span>{root_ids.length} roots</span>
+          <span>{edges.length} edges</span>
         </div>
       </header>
-      <main className="layers">
-        {layers.map((layer, index) => (
-          <section
-            key={`layer-${index}`}
-            className="layer"
-            style={{ animationDelay: `${index * 70}ms` }}
-          >
-            <div className="layer-header">
-              <div className="layer-title">Layer {index}</div>
-              <div className="layer-meta">{layer.length} techs</div>
-            </div>
-            <div className="layer-row">
-              {layer.map((node) => {
-                const prereqCount =
-                  node.required_technologies_merged?.length ??
-                  node.required_technologies?.length ??
-                  0;
-                const isRoot = rootIds.has(node.id);
-                return (
-                  <div
-                    key={node.id}
-                    className={`node${isRoot ? " node-root" : ""}`}
-                  >
-                    <div className="node-icon">
-                      <img
-                        src={`/api/tech-image?path=${encodeURIComponent(
-                          node.image_path ?? "",
-                        )}`}
-                        alt={formatTitle(node.title)}
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="node-title">{formatTitle(node.title)}</div>
-                    <div className="node-meta">
-                      {prereqCount} prereq{prereqCount === 1 ? "" : "s"} •{" "}
-                      {node.id}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ))}
+      <main className="graph">
+        <TechGraph nodes={nodes} edges={edges} root_ids={root_ids} />
       </main>
     </div>
   );

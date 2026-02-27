@@ -15,7 +15,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Factorio Tech Tree",
-  description: "Layered view of the Factorio tech tree.",
+  description: "Interactive graph view of the Factorio tech tree.",
 };
 
 export default function RootLayout({
