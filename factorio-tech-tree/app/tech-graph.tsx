@@ -8,12 +8,14 @@ type GraphNode = {
   image_path?: string;
   prerequisites: string[];
   level: number;
+  is_infinite: boolean;
 };
 
 type GraphEdge = {
   id: string;
   from: string;
   to: string;
+  is_self_loop?: boolean;
 };
 
 type GraphViewProps = {
@@ -28,10 +30,10 @@ type Layout = {
   positions: Record<string, { x: number; y: number }>;
 };
 
-const node_width = 170;
-const node_height = 112;
-const node_gap_x = 70;
-const node_gap_y = 90;
+const node_width = 220;
+const node_height = 190;
+const node_gap_x = 80;
+const node_gap_y = 110;
 const canvas_padding = 80;
 const min_zoom = 0.35;
 const max_zoom = 2.5;
@@ -121,6 +123,9 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         const from_pos = layout.positions[edge.from];
         const to_pos = layout.positions[edge.to];
         if (!from_pos || !to_pos) {
+          return null;
+        }
+        if (edge.from === edge.to) {
           return null;
         }
 
@@ -267,12 +272,16 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
   );
 
   const on_wheel = useCallback(
-    (event: React.WheelEvent<HTMLDivElement>) => {
+    (event: React.WheelEvent<HTMLElement>) => {
       event.preventDefault();
+      const container = container_ref.current;
+      if (!container) {
+        return;
+      }
       const zoom_factor = event.deltaY < 0 ? 1.08 : 0.92;
-      const rect = event.currentTarget.getBoundingClientRect();
-      const anchor_x = event.clientX - rect.left;
-      const anchor_y = event.clientY - rect.top;
+      const rect = container.getBoundingClientRect();
+      const anchor_x = clamp(event.clientX - rect.left, 0, rect.width);
+      const anchor_y = clamp(event.clientY - rect.top, 0, rect.height);
       update_zoom(
         transform.scale * zoom_factor,
         anchor_x,
@@ -338,11 +347,10 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
   }, []);
 
   return (
-    <section className="graph-shell">
+    <section className="graph-shell" onWheel={on_wheel}>
       <div
         ref={container_ref}
         className={`graph-canvas${is_panning ? " is-panning" : ""}`}
-        onWheel={on_wheel}
         onPointerDown={on_pointer_down}
         onPointerMove={on_pointer_move}
         onPointerUp={on_pointer_up}
@@ -419,7 +427,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                     is_related ? " is-related" : ""
                   }${is_dimmed ? " is-dimmed" : ""}${
                     root_set.has(node.id) ? " is-root" : ""
-                  }`}
+                  }${node.is_infinite ? " is-infinite" : ""}`}
                   style={{
                     left: position.x,
                     top: position.y,
@@ -433,7 +441,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                   <div className="graph-node-icon">
                     <img
                       src={`/api/tech-image?path=${encodeURIComponent(
-                        node.image_path ?? "",
+                        node.image_path ?? `data/tech_images/${node.id}.png`,
                       )}`}
                       alt={format_title(node.title)}
                       loading="lazy"

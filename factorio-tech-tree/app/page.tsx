@@ -16,12 +16,14 @@ type GraphNode = {
   image_path?: string;
   prerequisites: string[];
   level: number;
+  is_infinite: boolean;
 };
 
 type GraphEdge = {
   id: string;
   from: string;
   to: string;
+  is_self_loop?: boolean;
 };
 
 type TechTreeData = {
@@ -41,10 +43,27 @@ async function loadTechTree(): Promise<TechTreeData> {
     .map((line) => JSON.parse(line) as TechNode);
 
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
-  const dependencies = new Map(
+  const raw_dependencies = new Map(
     nodes.map((node) => [
       node.id,
       node.required_technologies_merged ?? node.required_technologies ?? [],
+    ]),
+  );
+  const self_loop_ids = new Set(
+    nodes
+      .filter((node) => {
+        const merged = node.required_technologies_merged ?? [];
+        const direct = node.required_technologies ?? [];
+        return merged.includes(node.id) || direct.includes(node.id);
+      })
+      .map((node) => node.id),
+  );
+  const dependencies = new Map(
+    nodes.map((node) => [
+      node.id,
+      (raw_dependencies.get(node.id) ?? [])
+        .filter((dep) => dep !== node.id)
+        .filter((dep) => nodesById.has(dep)),
     ]),
   );
 
@@ -89,17 +108,14 @@ async function loadTechTree(): Promise<TechTreeData> {
     id: node.id,
     title: node.title,
     image_path: node.image_path,
-    prerequisites:
-      node.required_technologies_merged ?? node.required_technologies ?? [],
+    prerequisites: dependencies.get(node.id) ?? [],
     level: levels.get(node.id) ?? 0,
+    is_infinite: self_loop_ids.has(node.id),
   }));
   const edges: GraphEdge[] = [];
 
   for (const node of graph_nodes) {
     for (const dependency of node.prerequisites) {
-      if (!nodesById.has(dependency)) {
-        continue;
-      }
       edges.push({
         id: `${dependency}::${node.id}`,
         from: dependency,
@@ -117,27 +133,10 @@ async function loadTechTree(): Promise<TechTreeData> {
 }
 
 export default async function Home() {
-  const { nodes, edges, root_ids, max_level } = await loadTechTree();
-  const totalNodes = nodes.length;
-  const totalLayers = max_level + 1;
+  const { nodes, edges, root_ids } = await loadTechTree();
   return (
-    <div className="page">
-      <header className="header">
-        <div className="title">Factorio Tech Tree</div>
-        <div className="subtitle">
-          Explore the full dependency graph. Drag to pan, scroll to zoom, and
-          click nodes or edges to trace incoming and outgoing links.
-        </div>
-        <div className="summary">
-          <span>{totalNodes} techs</span>
-          <span>{totalLayers} layers</span>
-          <span>{root_ids.length} roots</span>
-          <span>{edges.length} edges</span>
-        </div>
-      </header>
-      <main className="graph">
-        <TechGraph nodes={nodes} edges={edges} root_ids={root_ids} />
-      </main>
-    </div>
+    <main className="graph page">
+      <TechGraph nodes={nodes} edges={edges} root_ids={root_ids} />
+    </main>
   );
 }
