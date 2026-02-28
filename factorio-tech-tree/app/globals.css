@@ -1,559 +1,553 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #eef1f4;
-  --surface: #f8fafc;
-  --surface-strong: #ffffff;
-  --ink: #0b0d10;
-  --ink-soft: #39424c;
-  --muted: #707a86;
-  --line: #d8dee5;
-  --accent: #1d6f7a;
-  --accent-soft: #5ab1b9;
-  --edge: #a5b2bf;
-  --edge-muted: #c8d2dc;
-  --edge-strong: #1d6f7a;
-  --panel: #f1f4f7;
+    --bg: #eef1f4;
+    --surface: #f8fafc;
+    --surface-strong: #ffffff;
+    --ink: #0b0d10;
+    --ink-soft: #39424c;
+    --muted: #707a86;
+    --line: #d8dee5;
+    --accent: #1d6f7a;
+    --accent-soft: #5ab1b9;
+    --edge: #a5b2bf;
+    --edge-muted: #c8d2dc;
+    --edge-strong: #1d6f7a;
+    --panel: #f1f4f7;
 }
 
 @theme inline {
-  --color-background: var(--bg);
-  --color-foreground: var(--ink);
-  --font-sans: var(--font-space-grotesk);
-  --font-mono: var(--font-plex-mono);
+    --color-background: var(--bg);
+    --color-foreground: var(--ink);
+    --font-sans: var(--font-space-grotesk);
+    --font-mono: var(--font-plex-mono);
 }
 
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 html,
 body {
-  height: 100%;
-  overflow: hidden;
+    height: 100%;
+    overflow: hidden;
 }
 
 body {
-  background: radial-gradient(
-      1200px 600px at 10% -10%,
-      #ffffff 0%,
-      #f1f4f6 40%,
-      #e8edf1 100%
-    ),
-    var(--bg);
-  color: var(--ink);
-  font-family: var(--font-space-grotesk), "Helvetica Neue", Arial, sans-serif;
-  margin: 0;
-  min-height: 100vh;
-  overscroll-behavior: none;
+    background: radial-gradient(1200px 600px at 10% -10%,
+            #ffffff 0%,
+            #f1f4f6 40%,
+            #e8edf1 100%),
+        var(--bg);
+    color: var(--ink);
+    font-family: var(--font-space-grotesk), "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    overscroll-behavior: none;
 }
 
 .page {
-  height: 100vh;
-  width: 100vw;
-  padding: 0;
+    height: 100vh;
+    width: 100vw;
+    padding: 0;
 }
 
 .header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 36px;
 }
 
 .title {
-  font-size: 36px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+    font-size: 36px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
 }
 
 .subtitle {
-  color: var(--muted);
-  font-size: 15px;
-  max-width: 700px;
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 700px;
 }
 
 .summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 12px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
 }
 
 .summary span {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 12px;
 }
 
 .graph {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  height: 100%;
-  width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    height: 100%;
+    width: 100%;
 }
 
 .graph-shell {
-  position: relative;
-  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
-  border: 0;
-  border-radius: 0;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  box-shadow: none;
-  min-height: 100%;
+    position: relative;
+    background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+    border: 0;
+    border-radius: 0;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    box-shadow: none;
+    min-height: 100%;
 }
 
 .graph-canvas {
-  position: relative;
-  height: 100%;
-  width: 100%;
-  background: radial-gradient(
-      400px 240px at 10% 10%,
-      rgba(90, 177, 185, 0.15),
-      transparent 70%
-    ),
-    radial-gradient(
-      600px 360px at 90% 20%,
-      rgba(29, 111, 122, 0.12),
-      transparent 70%
-    ),
-    linear-gradient(120deg, #f8fafc, #edf2f6);
-  overflow: hidden;
-  cursor: grab;
-  touch-action: none;
+    position: relative;
+    height: 100%;
+    width: 100%;
+    background: radial-gradient(400px 240px at 10% 10%,
+            rgba(90, 177, 185, 0.15),
+            transparent 70%),
+        radial-gradient(600px 360px at 90% 20%,
+            rgba(29, 111, 122, 0.12),
+            transparent 70%),
+        linear-gradient(120deg, #f8fafc, #edf2f6);
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
 }
 
 .graph-canvas.is-panning {
-  cursor: grabbing;
+    cursor: grabbing;
 }
 
 .graph-toolbar {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  display: flex;
-  gap: 8px;
-  z-index: 3;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid var(--line);
-  padding: 6px;
-  border-radius: 999px;
-  box-shadow: 0 10px 30px -22px rgba(15, 30, 40, 0.5);
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 3;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid var(--line);
+    padding: 6px;
+    border-radius: 999px;
+    box-shadow: 0 10px 30px -22px rgba(15, 30, 40, 0.5);
 }
 
 .graph-toolbar button {
-  border: 0;
-  background: var(--surface);
-  color: var(--ink-soft);
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-  font-family: inherit;
+    border: 0;
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+    font-family: inherit;
 }
 
 .graph-toolbar button:hover {
-  background: var(--accent);
-  color: #ffffff;
+    background: var(--accent);
+    color: #ffffff;
 }
 
 .graph-inner {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
 }
 
 .graph-edges {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  pointer-events: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    pointer-events: none;
 }
 
 .edge-line {
-  fill: none;
-  stroke: var(--edge);
-  stroke-width: 2.5;
-  opacity: 0.7;
-  transition: opacity 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease;
-  pointer-events: none;
+    fill: none;
+    stroke: var(--edge);
+    stroke-width: 2.5;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease;
+    pointer-events: none;
 }
 
 .edge-line.edge-highlight {
-  stroke: var(--edge-strong);
-  stroke-width: 3.4;
-  opacity: 1;
+    stroke: var(--edge-strong);
+    stroke-width: 3.4;
+    opacity: 1;
 }
 
 .edge-line.edge-dimmed {
-  opacity: 0.2;
+    opacity: 0.2;
 }
 
 .edge-hit {
-  fill: none;
-  stroke: transparent;
-  stroke-width: 14;
-  pointer-events: none;
-  stroke-linecap: round;
+    fill: none;
+    stroke: transparent;
+    stroke-width: 14;
+    pointer-events: none;
+    stroke-linecap: round;
 }
 
 .graph-nodes {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
 }
 
 .graph-node {
-  position: absolute;
-  border-radius: 18px;
-  border: 1px solid var(--line);
-  background: var(--surface-strong);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  text-align: center;
-  cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border 0.18s ease;
-  appearance: none;
-  font-family: inherit;
+    position: absolute;
+    border-radius: 18px;
+    border: 1px solid var(--line);
+    background: var(--surface-strong);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border 0.18s ease;
+    appearance: none;
+    font-family: inherit;
 }
 
 .graph-node:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 18px 30px -28px rgba(15, 30, 40, 0.6);
+    transform: translateY(-4px);
+    box-shadow: 0 18px 30px -28px rgba(15, 30, 40, 0.6);
 }
 
 .graph-node.is-selected {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface-strong));
-  box-shadow: 0 18px 30px -24px rgba(29, 111, 122, 0.45);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface-strong));
+    box-shadow: 0 18px 30px -24px rgba(29, 111, 122, 0.45);
 }
 
 .graph-node.is-related {
-  border-color: color-mix(in srgb, var(--accent-soft) 60%, var(--line));
+    border-color: color-mix(in srgb, var(--accent-soft) 60%, var(--line));
 }
 
 .graph-node.is-dimmed {
-  opacity: 0.45;
+    opacity: 0.45;
 }
 
 .graph-node.is-root {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  box-shadow: inset 0 0 0 1px rgba(29, 111, 122, 0.25);
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+    box-shadow: inset 0 0 0 1px rgba(29, 111, 122, 0.25);
 }
 
 .graph-node.is-infinite {
-  border-color: color-mix(in srgb, #d97706 65%, var(--line));
-  box-shadow: inset 0 0 0 1px rgba(217, 119, 6, 0.2);
-  background: color-mix(in srgb, #fef3c7 55%, var(--surface-strong));
+    border-color: color-mix(in srgb, #d97706 65%, var(--line));
+    box-shadow: inset 0 0 0 1px rgba(217, 119, 6, 0.2);
+    background: color-mix(in srgb, #fef3c7 55%, var(--surface-strong));
 }
 
 .graph-node-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  display: grid;
-  place-items: center;
-  background: var(--surface);
-  flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+    background: var(--surface);
+    flex-shrink: 0;
 }
 
 .graph-node-icon img {
-  width: 54px;
-  height: 54px;
-  object-fit: contain;
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
 }
 
 .graph-node-title {
-  font-size: 14px;
-  line-height: 1.3;
-  word-break: break-word;
+    font-size: 14px;
+    line-height: 1.3;
+    word-break: break-word;
 }
 
 .graph-node-meta {
-  font-family: var(--font-plex-mono), "IBM Plex Mono", monospace;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: var(--muted);
+    font-family: var(--font-plex-mono), "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
 }
 
 .graph-node-science {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  max-width: 242px;
-  align-self: center;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    max-width: 242px;
+    align-self: center;
 }
 
 .graph-node-science-pack {
-  width: 56px;
-  height: 56px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  display: grid;
-  place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    display: grid;
+    place-items: center;
 }
 
 .graph-node-science-pack img {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
 }
 
 .graph-details {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  overflow: hidden;
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  bottom: 18px;
-  width: 320px;
-  border-radius: 16px;
-  box-shadow: 0 20px 45px -32px rgba(12, 22, 32, 0.55);
-  z-index: 4;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    bottom: 18px;
+    width: 320px;
+    border-radius: 16px;
+    box-shadow: 0 20px 45px -32px rgba(12, 22, 32, 0.55);
+    z-index: 4;
 }
 
 .details-title {
-  font-size: 13px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
 }
 
 .details-empty {
-  font-size: 13px;
-  color: var(--muted);
+    font-size: 13px;
+    color: var(--muted);
 }
 
 .details-block {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .details-selected-icon {
-  width: 200px;
-  height: 200px;
-  margin: 0 auto;
-  display: grid;
-  place-items: center;
-  transform: translateX(6px);
-  margin-bottom: 12px;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+    display: grid;
+    place-items: center;
+    transform: translateX(6px);
+    margin-bottom: 12px;
 }
 
 .details-selected-icon img {
-  width: 200px;
-  height: 200px;
-  object-fit: contain;
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
 }
 
 .details-node {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px;
-  border-radius: 12px;
-  background: var(--surface-strong);
-  border: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--surface-strong);
+    border: 1px solid var(--line);
 }
 
 .details-node-title {
-  font-size: 15px;
+    font-size: 15px;
 }
 
 .details-node-meta {
-  font-size: 11px;
-  font-family: var(--font-plex-mono), "IBM Plex Mono", monospace;
-  color: var(--muted);
+    font-size: 11px;
+    font-family: var(--font-plex-mono), "IBM Plex Mono", monospace;
+    color: var(--muted);
 }
 
 .details-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .details-section-title {
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
 }
 
 .details-research {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .details-research-metrics {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
 }
 
 .details-research-metric {
-  background: var(--surface-strong);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+    background: var(--surface-strong);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .details-research-label {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
 }
 
 .details-research-value {
-  font-size: 14px;
-  color: var(--ink);
+    font-size: 14px;
+    color: var(--ink);
 }
 
 .details-science-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  align-self: center;
-  width: 100%;
-  max-width: 270px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-self: center;
+    width: 100%;
+    max-width: 270px;
 }
 
 .details-science-pack {
-  position: relative;
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--surface-strong);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--surface-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .details-science-pack img {
-  width: 45px;
-  height: 45px;
-  object-fit: contain;
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
 }
 
 .details-condition {
-  font-size: 13px;
-  color: var(--ink-soft);
-  background: var(--surface-strong);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 8px 10px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    background: var(--surface-strong);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
 }
 
 .details-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .details-link {
-  border: 1px solid var(--line);
-  background: var(--surface-strong);
-  color: var(--ink);
-  font-size: 13px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  text-align: left;
-  cursor: pointer;
-  transition: border 0.2s ease, transform 0.2s ease;
-  appearance: none;
-  font-family: inherit;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    border: 1px solid var(--line);
+    background: var(--surface-strong);
+    color: var(--ink);
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    text-align: left;
+    cursor: pointer;
+    transition: border 0.2s ease, transform 0.2s ease;
+    appearance: none;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .details-link:hover {
-  border-color: var(--accent-soft);
-  transform: translateX(2px);
+    border-color: var(--accent-soft);
+    transform: translateX(2px);
 }
 
 .details-link-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
 }
 
 .details-link-icon img {
-  width: 45px;
-  height: 45px;
-  object-fit: contain;
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
 }
 
 .details-link-text {
-  flex: 1;
-  text-align: left;
+    flex: 1;
+    text-align: left;
 }
 
 .graph-toolbar button:focus-visible,
 .graph-node:focus-visible,
 .details-link:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 @media (max-width: 900px) {
-  .page {
-    padding: 0;
-  }
+    .page {
+        padding: 0;
+    }
 
-  .graph-shell {
-    height: 100vh;
-    width: 100vw;
-  }
+    .graph-shell {
+        height: 100vh;
+        width: 100vw;
+    }
 
-  .graph-details {
-    top: auto;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    width: auto;
-    max-height: 36vh;
-  }
+    .graph-details {
+        top: auto;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        width: auto;
+        max-height: 36vh;
+    }
 
-  .graph-toolbar {
-    top: 12px;
-    left: 12px;
-    flex-wrap: wrap;
-  }
+    .graph-toolbar {
+        top: 12px;
+        left: 12px;
+        flex-wrap: wrap;
+    }
 }
