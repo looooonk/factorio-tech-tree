@@ -9,6 +9,23 @@ type GraphNode = {
   prerequisites: string[];
   level: number;
   is_infinite: boolean;
+  research_type?: string | null;
+  research_science?: ResearchScience | null;
+  research_condition_text?: string | null;
+};
+
+type ResearchSciencePack = {
+  name: string;
+  amount_per_unit?: number | null;
+  amount_text?: string | null;
+};
+
+type ResearchScience = {
+  time_seconds?: number | null;
+  time_text?: string | null;
+  unit_count?: number | null;
+  unit_count_text?: string | null;
+  science_packs: ResearchSciencePack[];
 };
 
 type GraphEdge = {
@@ -28,29 +45,120 @@ type Layout = {
   width: number;
   height: number;
   positions: Record<string, { x: number; y: number }>;
+  sizes: Record<string, { width: number; height: number }>;
 };
 
-const node_width = 220;
-const node_height = 190;
+const node_width = 300;
 const node_gap_x = 80;
 const node_gap_y = 110;
 const canvas_padding = 80;
 const min_zoom = 0.35;
 const max_zoom = 2.5;
+const node_padding_y = 28;
+const node_item_gap = 10;
+const node_icon_size = 72;
+const node_title_height = 36;
+const node_meta_height = 12;
+const science_pack_size = 56;
+const science_pack_gap = 6;
+const science_pack_name_map: Record<string, string> = {
+  "Automation science pack": "automation_science_pack",
+  "Logistic science pack": "logistic_science_pack",
+  "Military science pack": "military_science_pack",
+  "Chemical science pack": "chemical_science_pack",
+  "Production science pack": "production_science_pack",
+  "Utility science pack": "utility_science_pack",
+  "Space science pack": "space_science_pack",
+  "Metallurgic science pack": "metallurgic_science_pack",
+  "Agricultural science pack": "agricultural_science_pack",
+  "Electromagnetic science pack": "electromagnetic_science_pack",
+  "Cryogenic science pack": "cryogenic_science_pack",
+  "Promethium science pack": "promethium_science_pack",
+};
 
 function format_title(title: string) {
   return title.replace(/\s*\(research\)\s*$/i, "").trim();
 }
 
+function resolve_time_text(research_science: ResearchScience | null | undefined) {
+  if (!research_science) {
+    return null;
+  }
+  const raw = research_science.time_text?.trim();
+  if (raw && raw.length > 0) {
+    return raw.endsWith("s") ? raw : `${raw}s`;
+  }
+  if (typeof research_science.time_seconds === "number") {
+    return `${research_science.time_seconds}s`;
+  }
+  return null;
+}
+
+function resolve_unit_text(research_science: ResearchScience | null | undefined) {
+  if (!research_science) {
+    return null;
+  }
+  const raw = research_science.unit_count_text?.trim();
+  if (raw && raw.length > 0) {
+    return raw;
+  }
+  if (typeof research_science.unit_count === "number") {
+    return research_science.unit_count.toString();
+  }
+  return null;
+}
+
+function format_condition_text(text: string) {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function get_science_pack_icons(node: GraphNode | null | undefined) {
+  if (!node || node.research_type !== "science" || !node.research_science) {
+    return [];
+  }
+  return node.research_science.science_packs
+    .map((pack) => {
+      const internal_name = science_pack_name_map[pack.name];
+      if (!internal_name) {
+        return null;
+      }
+      return { internal_name, name: pack.name };
+    })
+    .filter((pack): pack is { internal_name: string; name: string } => pack !== null)
+    .slice(0, 12);
+}
+
+function get_node_icon_path(node: GraphNode) {
+  return node.image_path ?? `data/tech_images/${node.id}.png`;
+}
+
+function get_node_height(node: GraphNode) {
+  const science_icons = get_science_pack_icons(node);
+  const rows = Math.ceil(science_icons.length / 4);
+  const science_height =
+    rows > 0 ? rows * science_pack_size + Math.max(0, rows - 1) * science_pack_gap : 0;
+  const gap_count = rows > 0 ? 3 : 2;
+  return (
+    node_padding_y +
+    node_icon_size +
+    node_title_height +
+    node_meta_height +
+    science_height +
+    gap_count * node_item_gap
+  );
+}
+
 function build_layout(nodes: GraphNode[]): Layout {
   const nodes_by_level = new Map<number, GraphNode[]>();
   let max_level = 0;
+  const sizes: Record<string, { width: number; height: number }> = {};
 
   for (const node of nodes) {
     const level_nodes = nodes_by_level.get(node.level) ?? [];
     level_nodes.push(node);
     nodes_by_level.set(node.level, level_nodes);
     max_level = Math.max(max_level, node.level);
+    sizes[node.id] = { width: node_width, height: get_node_height(node) };
   }
 
   for (const level_nodes of nodes_by_level.values()) {
@@ -66,30 +174,44 @@ function build_layout(nodes: GraphNode[]): Layout {
     max_nodes_per_level * node_width +
     (max_nodes_per_level - 1) * node_gap_x +
     canvas_padding * 2;
+  const level_heights = new Map<number, number>();
+  for (const [level, level_nodes] of nodes_by_level.entries()) {
+    const row_height = Math.max(
+      0,
+      ...level_nodes.map((node) => sizes[node.id]?.height ?? 0),
+    );
+    level_heights.set(level, row_height);
+  }
+
+  const total_levels = max_level + 1;
   const height =
-    (max_level + 1) * node_height +
-    max_level * node_gap_y +
-    canvas_padding * 2;
+    canvas_padding * 2 +
+    Array.from({ length: total_levels }, (_, index) => level_heights.get(index) ?? 0)
+      .reduce((sum, value) => sum + value, 0) +
+    Math.max(0, total_levels - 1) * node_gap_y;
 
   const positions: Record<string, { x: number; y: number }> = {};
+  let current_y = canvas_padding;
 
-  for (const [level, level_nodes] of nodes_by_level.entries()) {
+  for (let level = 0; level <= max_level; level += 1) {
+    const level_nodes = nodes_by_level.get(level) ?? [];
     const row_width =
       level_nodes.length * node_width +
       Math.max(0, level_nodes.length - 1) * node_gap_x;
     const offset_x =
       canvas_padding + Math.max(0, (width - canvas_padding * 2 - row_width) / 2);
-    const y = canvas_padding + level * (node_height + node_gap_y);
 
     for (const [index, node] of level_nodes.entries()) {
       positions[node.id] = {
         x: offset_x + index * (node_width + node_gap_x),
-        y,
+        y: current_y,
       };
     }
+
+    current_y += (level_heights.get(level) ?? 0) + node_gap_y;
   }
 
-  return { width, height, positions };
+  return { width, height, positions, sizes };
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -103,9 +225,6 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
   const pointer_ref = useRef<{ x: number; y: number } | null>(null);
   const dragged_ref = useRef(false);
   const [selected_node_id, set_selected_node_id] = useState<string | null>(
-    null,
-  );
-  const [selected_edge_id, set_selected_edge_id] = useState<string | null>(
     null,
   );
 
@@ -122,6 +241,8 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
       .map((edge) => {
         const from_pos = layout.positions[edge.from];
         const to_pos = layout.positions[edge.to];
+        const from_size = layout.sizes[edge.from];
+        const to_size = layout.sizes[edge.to];
         if (!from_pos || !to_pos) {
           return null;
         }
@@ -129,9 +250,9 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
           return null;
         }
 
-        const start_x = from_pos.x + node_width / 2;
-        const start_y = from_pos.y + node_height;
-        const end_x = to_pos.x + node_width / 2;
+        const start_x = from_pos.x + (from_size?.width ?? node_width) / 2;
+        const start_y = from_pos.y + (from_size?.height ?? 0);
+        const end_x = to_pos.x + (to_size?.width ?? node_width) / 2;
         const end_y = to_pos.y;
         const mid_y = start_y + (end_y - start_y) * 0.55;
         const path = `M ${start_x} ${start_y} C ${start_x} ${mid_y}, ${end_x} ${mid_y}, ${end_x} ${end_y}`;
@@ -139,13 +260,6 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
       })
       .filter((edge): edge is GraphEdge & { path: string } => edge !== null);
   }, [edges, layout.positions]);
-
-  const selected_edge = useMemo(() => {
-    if (!selected_edge_id) {
-      return null;
-    }
-    return edges.find((edge) => edge.id === selected_edge_id) ?? null;
-  }, [edges, selected_edge_id]);
 
   const selected_node = useMemo(() => {
     if (!selected_node_id) {
@@ -174,18 +288,8 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
       };
     }
 
-    if (selected_edge) {
-      const from_node = nodes_by_id.get(selected_edge.from) ?? null;
-      const to_node = nodes_by_id.get(selected_edge.to) ?? null;
-      return {
-        mode: "edge" as const,
-        from_node,
-        to_node,
-      };
-    }
-
     return { mode: "none" as const };
-  }, [edges, nodes_by_id, selected_edge, selected_node_id]);
+  }, [edges, nodes_by_id, selected_node_id]);
 
   const highlighted_edge_ids = useMemo(() => {
     if (selection.mode === "node") {
@@ -195,12 +299,8 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
       ]);
     }
 
-    if (selection.mode === "edge" && selected_edge) {
-      return new Set([selected_edge.id]);
-    }
-
     return new Set<string>();
-  }, [selection, selected_edge]);
+  }, [selection]);
 
   const related_node_ids = useMemo(() => {
     if (selection.mode === "node") {
@@ -211,12 +311,8 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
       ]);
     }
 
-    if (selection.mode === "edge" && selected_edge) {
-      return new Set([selected_edge.from, selected_edge.to]);
-    }
-
     return new Set<string>();
-  }, [selection, selected_edge, selected_node_id]);
+  }, [selection, selected_node_id]);
 
   const fit_to_view = useCallback(() => {
     const container = container_ref.current;
@@ -343,7 +439,6 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
       return;
     }
     set_selected_node_id(null);
-    set_selected_edge_id(null);
   }, []);
 
   return (
@@ -394,16 +489,6 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                     }`}
                     d={edge.path}
                   />
-                  <path
-                    className="edge-hit"
-                    data-no-pan
-                    d={edge.path}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      set_selected_edge_id(edge.id);
-                      set_selected_node_id(null);
-                    }}
-                  />
                 </g>
               );
             })}
@@ -414,6 +499,11 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
               if (!position) {
                 return null;
               }
+              const science_icons = get_science_pack_icons(node);
+              const size = layout.sizes[node.id] ?? {
+                width: node_width,
+                height: get_node_height(node),
+              };
               const is_selected = selected_node_id === node.id;
               const is_related = related_node_ids.has(node.id);
               const is_dimmed =
@@ -431,23 +521,39 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                   style={{
                     left: position.x,
                     top: position.y,
+                    width: size.width,
+                    height: size.height,
                   }}
                   onClick={(event) => {
                     event.stopPropagation();
                     set_selected_node_id(node.id);
-                    set_selected_edge_id(null);
                   }}
                 >
                   <div className="graph-node-icon">
-                    <img
-                      src={`/api/tech-image?path=${encodeURIComponent(
-                        node.image_path ?? `data/tech_images/${node.id}.png`,
-                      )}`}
-                      alt={format_title(node.title)}
-                      loading="lazy"
-                    />
+                      <img
+                        src={`/api/tech-image?path=${encodeURIComponent(
+                          get_node_icon_path(node),
+                        )}`}
+                        alt={format_title(node.title)}
+                        loading="lazy"
+                      />
                   </div>
                   <div className="graph-node-title">{format_title(node.title)}</div>
+                  {science_icons.length > 0 ? (
+                    <div className="graph-node-science">
+                      {science_icons.map((pack) => (
+                        <div key={pack.internal_name} className="graph-node-science-pack">
+                          <img
+                            src={`/api/tech-image?path=${encodeURIComponent(
+                              `data/tech_images/${pack.internal_name}.png`,
+                            )}`}
+                            alt={pack.name}
+                            loading="lazy"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   <div className="graph-node-meta">{node.id}</div>
                 </button>
               );
@@ -459,14 +565,70 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         <div className="details-title">Selection</div>
         {selection.mode === "none" && (
           <div className="details-empty">
-            Click a node or edge to see its incoming and outgoing connections.
+            Click a node to see its incoming and outgoing connections.
           </div>
         )}
         {selection.mode === "node" && selected_node && (
           <div className="details-block">
+            <div className="details-selected-icon">
+              <img
+                src={`/api/tech-image?path=${encodeURIComponent(
+                  get_node_icon_path(selected_node),
+                )}`}
+                alt={format_title(selected_node.title)}
+                loading="lazy"
+              />
+            </div>
             <div className="details-node">
               <div className="details-node-title">{format_title(selected_node.title)}</div>
               <div className="details-node-meta">{selected_node.id}</div>
+            </div>
+            <div className="details-section">
+              <div className="details-section-title">Requirements</div>
+              {selected_node.research_type === "science" &&
+              selected_node.research_science ? (
+                <div className="details-research">
+                  <div className="details-research-metrics">
+                    <div className="details-research-metric">
+                      <span className="details-research-label">Unit count</span>
+                      <span className="details-research-value">
+                        {resolve_unit_text(selected_node.research_science) ?? "N/A"}
+                      </span>
+                    </div>
+                    <div className="details-research-metric">
+                      <span className="details-research-label">Time</span>
+                      <span className="details-research-value">
+                        {resolve_time_text(selected_node.research_science) ?? "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="details-science-list">
+                    {selected_node.research_science.science_packs.map((pack) => {
+                      const internal_name = science_pack_name_map[pack.name];
+                      if (!internal_name) {
+                        return null;
+                      }
+                      return (
+                        <div key={pack.name} className="details-science-pack">
+                          <img
+                            src={`/api/tech-image?path=${encodeURIComponent(
+                              `data/tech_images/${internal_name}.png`,
+                            )}`}
+                            alt={pack.name}
+                            loading="lazy"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : selected_node.research_condition_text ? (
+                <div className="details-condition">
+                  {format_condition_text(selected_node.research_condition_text)}
+                </div>
+              ) : (
+                <div className="details-empty">No research requirements.</div>
+              )}
             </div>
             <div className="details-section">
               <div className="details-section-title">Incoming</div>
@@ -481,10 +643,20 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                       className="details-link"
                       onClick={() => {
                         set_selected_node_id(node.id);
-                        set_selected_edge_id(null);
                       }}
                     >
-                      {format_title(node.title)}
+                      <span className="details-link-icon">
+                        <img
+                          src={`/api/tech-image?path=${encodeURIComponent(
+                            get_node_icon_path(node),
+                          )}`}
+                          alt={format_title(node.title)}
+                          loading="lazy"
+                        />
+                      </span>
+                      <span className="details-link-text">
+                        {format_title(node.title)}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -503,52 +675,24 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                       className="details-link"
                       onClick={() => {
                         set_selected_node_id(node.id);
-                        set_selected_edge_id(null);
                       }}
                     >
-                      {format_title(node.title)}
+                      <span className="details-link-icon">
+                        <img
+                          src={`/api/tech-image?path=${encodeURIComponent(
+                            get_node_icon_path(node),
+                          )}`}
+                          alt={format_title(node.title)}
+                          loading="lazy"
+                        />
+                      </span>
+                      <span className="details-link-text">
+                        {format_title(node.title)}
+                      </span>
                     </button>
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        )}
-        {selection.mode === "edge" && selected_edge && (
-          <div className="details-block">
-            <div className="details-node">
-              <div className="details-node-title">Connection</div>
-              <div className="details-node-meta">{selected_edge.id}</div>
-            </div>
-            <div className="details-section">
-              <div className="details-section-title">From</div>
-              <div className="details-list">
-                <button
-                  type="button"
-                  className="details-link"
-                  onClick={() => {
-                    set_selected_node_id(selected_edge.from);
-                    set_selected_edge_id(null);
-                  }}
-                >
-                  {format_title(nodes_by_id.get(selected_edge.from)?.title ?? "")}
-                </button>
-              </div>
-            </div>
-            <div className="details-section">
-              <div className="details-section-title">To</div>
-              <div className="details-list">
-                <button
-                  type="button"
-                  className="details-link"
-                  onClick={() => {
-                    set_selected_node_id(selected_edge.to);
-                    set_selected_edge_id(null);
-                  }}
-                >
-                  {format_title(nodes_by_id.get(selected_edge.to)?.title ?? "")}
-                </button>
-              </div>
             </div>
           </div>
         )}

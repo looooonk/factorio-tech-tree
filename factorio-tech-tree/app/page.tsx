@@ -8,6 +8,23 @@ type TechNode = {
   required_technologies?: string[];
   required_technologies_merged?: string[];
   image_path?: string;
+  research_type?: string | null;
+  research_science?: ResearchScience | null;
+  research_condition_text?: string | null;
+};
+
+type ResearchSciencePack = {
+  name: string;
+  amount_per_unit?: number | null;
+  amount_text?: string | null;
+};
+
+type ResearchScience = {
+  time_seconds?: number | null;
+  time_text?: string | null;
+  unit_count?: number | null;
+  unit_count_text?: string | null;
+  science_packs: ResearchSciencePack[];
 };
 
 type GraphNode = {
@@ -17,6 +34,9 @@ type GraphNode = {
   prerequisites: string[];
   level: number;
   is_infinite: boolean;
+  research_type?: string | null;
+  research_science?: ResearchScience | null;
+  research_condition_text?: string | null;
 };
 
 type GraphEdge = {
@@ -111,6 +131,9 @@ async function loadTechTree(): Promise<TechTreeData> {
     prerequisites: dependencies.get(node.id) ?? [],
     level: levels.get(node.id) ?? 0,
     is_infinite: self_loop_ids.has(node.id),
+    research_type: node.research_type ?? null,
+    research_science: node.research_science ?? null,
+    research_condition_text: node.research_condition_text ?? null,
   }));
   const edges: GraphEdge[] = [];
 

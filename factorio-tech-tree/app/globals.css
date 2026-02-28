@@ -179,6 +179,7 @@ body {
   top: 0;
   left: 0;
   z-index: 1;
+  pointer-events: none;
 }
 
 .edge-line {
@@ -204,8 +205,7 @@ body {
   fill: none;
   stroke: transparent;
   stroke-width: 14;
-  pointer-events: stroke;
-  cursor: pointer;
+  pointer-events: none;
   stroke-linecap: round;
 }
 
@@ -218,8 +218,6 @@ body {
 
 .graph-node {
   position: absolute;
-  width: 220px;
-  height: 190px;
   border-radius: 18px;
   border: 1px solid var(--line);
   background: var(--surface-strong);
@@ -242,6 +240,7 @@ body {
 
 .graph-node.is-selected {
   border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-strong));
   box-shadow: 0 18px 30px -24px rgba(29, 111, 122, 0.45);
 }
 
@@ -294,6 +293,32 @@ body {
   color: var(--muted);
 }
 
+.graph-node-science {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-width: 242px;
+  align-self: center;
+}
+
+.graph-node-science-pack {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+}
+
+.graph-node-science-pack img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
 .graph-details {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -330,6 +355,22 @@ body {
   gap: 16px;
 }
 
+.details-selected-icon {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  transform: translateX(6px);
+  margin-bottom: 12px;
+}
+
+.details-selected-icon img {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+}
+
 .details-node {
   display: flex;
   flex-direction: column;
@@ -363,6 +404,77 @@ body {
   color: var(--ink-soft);
 }
 
+.details-research {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.details-research-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.details-research-metric {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.details-research-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.details-research-value {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.details-science-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-self: center;
+  width: 100%;
+  max-width: 270px;
+}
+
+.details-science-pack {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.details-science-pack img {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+}
+
+.details-condition {
+  font-size: 13px;
+  color: var(--ink-soft);
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
 .details-list {
   display: flex;
   flex-direction: column;
@@ -381,11 +493,36 @@ body {
   transition: border 0.2s ease, transform 0.2s ease;
   appearance: none;
   font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .details-link:hover {
   border-color: var(--accent-soft);
   transform: translateX(2px);
+}
+
+.details-link-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.details-link-icon img {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+}
+
+.details-link-text {
+  flex: 1;
+  text-align: left;
 }
 
 .graph-toolbar button:focus-visible,
