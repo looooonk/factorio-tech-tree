@@ -10,7 +10,7 @@ An interactive Factorio tech tree explorer with a companion crawler that pulls d
 | `crawler/` | Python crawler that scrapes the Factorio Wiki and exports `tech_tree.jsonl`. |
 | `factorio-tech-tree/` | Next.js app that renders the tech tree from JSONL and images. |
 
-## Run the app
+## Running the App
 ```bash
 cd factorio-tech-tree
 npm install
@@ -18,7 +18,9 @@ npm run dev
 ```
 Open `http://localhost:3000`.
 
-## Update the data
+Website hosting is being worked on.
+
+## Updating the Data
 The crawler writes JSONL data that the app loads from `factorio-tech-tree/data/tech_tree.jsonl`.
 
 ```bash
@@ -30,6 +32,6 @@ pip install requests beautifulsoup4
 python main.py --output-jsonl ../factorio-tech-tree/data/tech_tree.jsonl
 ```
 
-## Data notes
+## Data Notes
 - Tech data lives in `factorio-tech-tree/data/tech_tree.jsonl`.
 - Tech images live in `factorio-tech-tree/data/tech_images` and are served via `/api/tech-image`.
