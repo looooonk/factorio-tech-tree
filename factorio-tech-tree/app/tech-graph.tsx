@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import GraphCanvas from "./components/tech-graph/graph-canvas";
 import GraphDetails from "./components/tech-graph/graph-details";
 import type { GraphEdge, GraphNode } from "./lib/tech-tree/types";
-import { build_layout } from "./lib/tech-graph/layout";
+import { build_layout } from "./lib/tech-graph/graph-layout";
 import { max_zoom, min_zoom, node_width, science_pack_name_map } from "./lib/tech-graph/constants";
 import type { GraphEdgePath, GraphSelection, Transform } from "./lib/tech-graph/types";
 import { clamp } from "./lib/tech-graph/utils";

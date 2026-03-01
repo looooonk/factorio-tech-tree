@@ -3,7 +3,7 @@ import type { PointerEvent, RefObject } from "react";
 import { FaTools } from "react-icons/fa";
 
 import type { GraphNode } from "../../lib/tech-tree/types";
-import type { Layout } from "../../lib/tech-graph/layout";
+import type { Layout } from "../../lib/tech-graph/graph-layout";
 import type { GraphEdgePath, Transform } from "../../lib/tech-graph/types";
 import { node_width } from "../../lib/tech-graph/constants";
 import {
