@@ -21,7 +21,7 @@ export default function GraphDetails({
     on_select_node,
 }: GraphDetailsProps) {
     return (
-        <aside className="graph-details">
+        <aside className="graph-details" data-no-zoom>
             <div className="details-title">Selection</div>
             {selection.mode === "none" && (
                 <div className="details-empty">
@@ -95,7 +95,7 @@ export default function GraphDetails({
                         )}
                     </div>
                     <div className="details-section">
-                        <div className="details-section-title">Incoming</div>
+                        <div className="details-section-title">Required Research</div>
                         {selection.incoming_nodes.length === 0 ? (
                             <div className="details-empty">No prerequisites.</div>
                         ) : (
@@ -127,7 +127,7 @@ export default function GraphDetails({
                         )}
                     </div>
                     <div className="details-section">
-                        <div className="details-section-title">Outgoing</div>
+                        <div className="details-section-title">Allows</div>
                         {selection.outgoing_nodes.length === 0 ? (
                             <div className="details-empty">No dependents.</div>
                         ) : (

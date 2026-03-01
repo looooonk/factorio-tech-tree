@@ -6,7 +6,7 @@ import GraphCanvas from "./components/tech-graph/graph-canvas";
 import GraphDetails from "./components/tech-graph/graph-details";
 import type { GraphEdge, GraphNode } from "./lib/tech-tree/types";
 import { build_layout } from "./lib/tech-graph/layout";
-import { max_zoom, min_zoom, node_width } from "./lib/tech-graph/constants";
+import { max_zoom, min_zoom, node_width, science_pack_name_map } from "./lib/tech-graph/constants";
 import type { GraphEdgePath, GraphSelection, Transform } from "./lib/tech-graph/types";
 import { clamp } from "./lib/tech-graph/utils";
 
@@ -15,6 +15,19 @@ type GraphViewProps = {
     edges: GraphEdge[];
     root_ids: string[];
 };
+
+const misc_filter_id = "misc";
+const science_filter_options = Object.entries(science_pack_name_map).map(
+    ([name, internal_name]) => ({
+        id: internal_name,
+        label: name,
+        icon_path: `data/tech_images/${internal_name}.png`,
+    }),
+);
+const all_filter_ids = new Set([
+    ...science_filter_options.map((filter) => filter.id),
+    misc_filter_id,
+]);
 
 export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     const container_ref = useRef<HTMLDivElement | null>(null);
@@ -25,6 +38,10 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     const [selected_node_id, set_selected_node_id] = useState<string | null>(
         null,
     );
+    const [active_filters, set_active_filters] = useState<Set<string>>(
+        () => new Set(all_filter_ids),
+    );
+    const [search_query, set_search_query] = useState("");
 
     const root_set = useMemo(() => new Set(root_ids), [root_ids]);
     const nodes_by_id = useMemo(
@@ -112,6 +129,70 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         return new Set<string>();
     }, [selection, selected_node_id]);
 
+    const filter_match_ids = useMemo(() => {
+        const matches = new Set<string>();
+        for (const node of nodes) {
+            const science_packs = node.research_science?.science_packs ?? [];
+            if (node.research_type === "science" && science_packs.length > 0) {
+                let is_match = true;
+                for (const pack of science_packs) {
+                    const internal_name = science_pack_name_map[pack.name];
+                    if (!internal_name || !active_filters.has(internal_name)) {
+                        is_match = false;
+                        break;
+                    }
+                }
+                if (is_match) {
+                    matches.add(node.id);
+                }
+            } else if (active_filters.has(misc_filter_id)) {
+                matches.add(node.id);
+            }
+        }
+        return matches;
+    }, [active_filters, nodes]);
+
+    const search_matches = useMemo(() => {
+        const normalized_query = search_query.trim().toLowerCase();
+        if (!normalized_query) {
+            return [];
+        }
+        return nodes.filter((node) => {
+            const title = node.title?.toLowerCase() ?? "";
+            return (
+                node.id.toLowerCase().includes(normalized_query) ||
+                title.includes(normalized_query)
+            );
+        });
+    }, [nodes, search_query]);
+
+    const search_match_ids = useMemo(() => {
+        if (search_matches.length === 0) {
+            return new Set<string>();
+        }
+        return new Set(search_matches.map((node) => node.id));
+    }, [search_matches]);
+
+    const toggle_filter = useCallback((filter_id: string) => {
+        set_active_filters((current) => {
+            const next = new Set(current);
+            if (next.has(filter_id)) {
+                next.delete(filter_id);
+            } else {
+                next.add(filter_id);
+            }
+            return next;
+        });
+    }, []);
+
+    const select_all_filters = useCallback(() => {
+        set_active_filters(new Set(all_filter_ids));
+    }, []);
+
+    const deselect_all_filters = useCallback(() => {
+        set_active_filters(new Set());
+    }, []);
+
     const fit_to_view = useCallback(() => {
         const container = container_ref.current;
         if (!container) {
@@ -167,6 +248,10 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
 
     const on_wheel = useCallback(
         (event: React.WheelEvent<HTMLElement>) => {
+            const target = event.target as HTMLElement;
+            if (target.closest("[data-no-zoom]")) {
+                return;
+            }
             event.preventDefault();
             const container = container_ref.current;
             if (!container) {
@@ -251,6 +336,16 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                 root_set={root_set}
                 selected_node_id={selected_node_id}
                 related_node_ids={related_node_ids}
+                filter_match_ids={filter_match_ids}
+                search_match_ids={search_match_ids}
+                search_query={search_query}
+                search_matches={search_matches}
+                on_search_query_change={set_search_query}
+                science_filters={science_filter_options}
+                active_filters={active_filters}
+                on_toggle_filter={toggle_filter}
+                on_select_all_filters={select_all_filters}
+                on_deselect_all_filters={deselect_all_filters}
                 highlighted_edge_ids={highlighted_edge_ids}
                 on_pointer_down={on_pointer_down}
                 on_pointer_move={on_pointer_move}

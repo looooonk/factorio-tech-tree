@@ -1,6 +1,8 @@
 # Factorio Tech Tree
 
-An interactive tech tree explorer for Factorio, backed by a lightweight crawler that scrapes the Factorio Wiki and exports a JSONL dataset.
+An interactive Factorio tech tree explorer with a companion crawler that pulls data from the Factorio Wiki.
+
+![Tech tree preview](resources/sample_image.png)
 
 ## Repo layout
 | Path | Description |
@@ -15,8 +17,6 @@ npm install
 npm run dev
 ```
 Open `http://localhost:3000`.
-
-Actual website hosting is being worked on.
 
 ## Update the data
 The crawler writes JSONL data that the app loads from `factorio-tech-tree/data/tech_tree.jsonl`.

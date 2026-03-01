@@ -1,4 +1,6 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import type { PointerEvent, RefObject } from "react";
+import { FaTools } from "react-icons/fa";
 
 import type { GraphNode } from "../../lib/tech-tree/types";
 import type { Layout } from "../../lib/tech-graph/layout";
@@ -21,6 +23,20 @@ type GraphCanvasProps = {
     root_set: Set<string>;
     selected_node_id: string | null;
     related_node_ids: Set<string>;
+    filter_match_ids: Set<string>;
+    search_match_ids: Set<string>;
+    search_query: string;
+    search_matches: GraphNode[];
+    on_search_query_change: (next_query: string) => void;
+    science_filters: {
+        id: string;
+        label: string;
+        icon_path: string;
+    }[];
+    active_filters: Set<string>;
+    on_toggle_filter: (filter_id: string) => void;
+    on_select_all_filters: () => void;
+    on_deselect_all_filters: () => void;
     highlighted_edge_ids: Set<string>;
     on_pointer_down: (event: PointerEvent<HTMLDivElement>) => void;
     on_pointer_move: (event: PointerEvent<HTMLDivElement>) => void;
@@ -42,6 +58,16 @@ export default function GraphCanvas({
     root_set,
     selected_node_id,
     related_node_ids,
+    filter_match_ids,
+    search_match_ids,
+    search_query,
+    search_matches,
+    on_search_query_change,
+    science_filters,
+    active_filters,
+    on_toggle_filter,
+    on_select_all_filters,
+    on_deselect_all_filters,
     highlighted_edge_ids,
     on_pointer_down,
     on_pointer_move,
@@ -52,6 +78,44 @@ export default function GraphCanvas({
     on_reset,
     on_select_node,
 }: GraphCanvasProps) {
+    const toolbar_ref = useRef<HTMLDivElement | null>(null);
+    const filter_ref = useRef<HTMLDivElement | null>(null);
+    const [controls_width, set_controls_width] = useState<number | null>(null);
+    const misc_active = active_filters.has("misc");
+
+    useLayoutEffect(() => {
+        const toolbar = toolbar_ref.current;
+        const filter = filter_ref.current;
+        if (!toolbar || !filter) {
+            return;
+        }
+
+        const update_width = () => {
+            const toolbar_width = toolbar.getBoundingClientRect().width;
+            const filter_width = filter.getBoundingClientRect().width;
+            const next_width = Math.max(toolbar_width, filter_width);
+            set_controls_width((current) => {
+                if (current && Math.abs(current - next_width) < 0.5) {
+                    return current;
+                }
+                return next_width;
+            });
+        };
+
+        update_width();
+        const observer = new ResizeObserver(() => {
+            update_width();
+        });
+        observer.observe(toolbar);
+        observer.observe(filter);
+
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
+
+    const control_style = controls_width ? { width: `${controls_width}px` } : undefined;
+
     return (
         <div
             ref={container_ref}
@@ -62,7 +126,7 @@ export default function GraphCanvas({
             onPointerCancel={on_pointer_up}
             onClick={on_canvas_click}
         >
-            <div className="graph-toolbar" data-no-pan>
+            <div className="graph-toolbar" data-no-pan ref={toolbar_ref} style={control_style}>
                 <button type="button" onClick={on_zoom_in}>
                     Zoom in
                 </button>
@@ -72,6 +136,131 @@ export default function GraphCanvas({
                 <button type="button" onClick={on_reset}>
                     Reset
                 </button>
+            </div>
+            <div className="graph-filter-stack" data-no-pan data-no-zoom>
+                <div
+                    className="graph-filter-panel"
+                    data-no-pan
+                    data-no-zoom
+                    ref={filter_ref}
+                    style={control_style}
+                >
+                    <div className="graph-filter-actions">
+                        <button
+                            type="button"
+                            className="graph-filter-action"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                on_select_all_filters();
+                            }}
+                        >
+                            Select all
+                        </button>
+                        <button
+                            type="button"
+                            className="graph-filter-action"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                on_deselect_all_filters();
+                            }}
+                        >
+                            Deselect all
+                        </button>
+                    </div>
+                    <div className="graph-filter-grid">
+                        {science_filters.map((filter) => {
+                            const is_active = active_filters.has(filter.id);
+                            return (
+                                <button
+                                    key={filter.id}
+                                    type="button"
+                                    className={`graph-filter-button${is_active ? " is-active" : ""}`}
+                                    aria-pressed={is_active}
+                                    aria-label={filter.label}
+                                    title={filter.label}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        on_toggle_filter(filter.id);
+                                    }}
+                                >
+                                    <img
+                                        src={`/api/tech-image?path=${encodeURIComponent(
+                                            filter.icon_path,
+                                        )}`}
+                                        alt={filter.label}
+                                        loading="lazy"
+                                    />
+                                </button>
+                            );
+                        })}
+                        <button
+                            key="misc"
+                            type="button"
+                            className={`graph-filter-button${misc_active ? " is-active" : ""}`}
+                            aria-pressed={misc_active}
+                            aria-label="Misc research"
+                            title="Misc research"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                on_toggle_filter("misc");
+                            }}
+                        >
+                            <FaTools aria-hidden />
+                        </button>
+                    </div>
+                </div>
+                <div className="graph-search-panel" data-no-pan data-no-zoom style={control_style}>
+                    <div className="graph-filter-search">
+                        <input
+                            type="search"
+                            value={search_query}
+                            placeholder="Search technology"
+                            className="graph-filter-input"
+                            data-no-pan
+                            data-no-zoom
+                            onChange={(event) => {
+                                on_search_query_change(event.target.value);
+                            }}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                            }}
+                        />
+                    </div>
+                    {search_query.trim().length > 0 ? (
+                        <div className="graph-filter-results" data-no-pan data-no-zoom>
+                            {search_matches.length === 0 ? (
+                                <div className="graph-filter-empty">No matches.</div>
+                            ) : (
+                                search_matches.map((node) => (
+                                    <button
+                                        key={node.id}
+                                        type="button"
+                                        className="graph-filter-result"
+                                        data-no-pan
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            on_select_node(node.id);
+                                        }}
+                                    >
+                                        <span className="graph-filter-result-icon">
+                                            <img
+                                                src={`/api/tech-image?path=${encodeURIComponent(
+                                                    get_node_icon_path(node),
+                                                )}`}
+                                                alt={format_title(node.title)}
+                                                loading="lazy"
+                                            />
+                                        </span>
+                                        <span className="graph-filter-result-text">
+                                            {format_title(node.title)}
+                                        </span>
+                                        <span className="graph-filter-result-meta">{node.id}</span>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    ) : null}
+                </div>
             </div>
             <div
                 className="graph-inner"
@@ -115,12 +304,14 @@ export default function GraphCanvas({
                         const is_selected = selected_node_id === node.id;
                         const is_related = related_node_ids.has(node.id);
                         const is_dimmed = related_node_ids.size > 0 && !related_node_ids.has(node.id);
+                        const is_filtered_out = !filter_match_ids.has(node.id);
+                        const is_search_match = search_match_ids.has(node.id);
                         return (
                             <button
                                 key={node.id}
                                 type="button"
                                 data-no-pan
-                                className={`graph-node${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_dimmed ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
+                                className={`graph-node${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_search_match ? " is-search-match" : ""}${is_dimmed || is_filtered_out ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
                                 style={{
                                     left: position.x,
                                     top: position.y,
