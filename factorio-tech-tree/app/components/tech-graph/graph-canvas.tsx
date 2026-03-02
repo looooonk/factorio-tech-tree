@@ -271,6 +271,19 @@ export default function GraphCanvas({
                     ) : null}
                 </div>
             </div>
+            <div className="graph-credit" data-no-pan data-no-zoom>
+                <span>Developed by Taehoon Hwang.</span>
+                <br />
+                <span>Aid development on </span>
+                <a
+                    href="https://github.com/looooonk/factorio-tech-tree"
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    GitHub
+                </a>
+                <span>.</span>
+            </div>
             <div
                 className="graph-inner"
                 style={{

@@ -136,6 +136,34 @@
     z-index: 3;
 }
 
+.graph-credit {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    font-size: 11px;
+    color: var(--muted);
+    z-index: 3;
+    letter-spacing: 0.01em;
+    background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
+    border: 1px solid var(--line);
+    padding: 6px 10px;
+    border-radius: 999px;
+    max-width: min(320px, 85vw);
+}
+
+.graph-credit a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.graph-credit a:hover,
+.graph-credit a:focus-visible {
+    color: var(--ink);
+    border-color: var(--ink);
+}
+
 .graph-filter-panel,
 .graph-search-panel {
     display: flex;
