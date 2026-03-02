@@ -8,6 +8,7 @@ import {
     resolve_time_text,
     resolve_unit_text,
 } from "../../lib/tech-graph/utils";
+import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 
 type GraphDetailsProps = {
     selection: GraphSelection;
@@ -41,7 +42,21 @@ export default function GraphDetails({
                     </div>
                     <div className="details-node">
                         <div className="details-node-title">
-                            {format_title(selected_node.title)}
+                            <span className="details-node-title-text">
+                                {format_title(selected_node.title)}
+                            </span>
+                            {selected_node.url ? (
+                                <a
+                                    className="details-wiki-link"
+                                    href={selected_node.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="Open on Factorio Wiki"
+                                    title="Open on Factorio Wiki"
+                                >
+                                    <FaArrowUpRightFromSquare />
+                                </a>
+                            ) : null}
                         </div>
                         <div className="details-node-meta">{selected_node.id}</div>
                     </div>

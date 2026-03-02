@@ -546,7 +546,36 @@
 }
 
 .details-node-title {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 8px;
     font-size: 15px;
+}
+
+.details-node-title-text {
+    min-width: 0;
+}
+
+.details-wiki-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    color: var(--muted);
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.details-wiki-link:hover,
+.details-wiki-link:focus-visible {
+    color: var(--ink);
+    border-color: var(--line);
+    background: var(--surface);
 }
 
 .details-node-meta {

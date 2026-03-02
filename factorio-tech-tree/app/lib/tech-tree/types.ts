@@ -1,6 +1,7 @@
 export type TechNode = {
     id: string;
     title: string;
+    url?: string;
     required_technologies?: string[];
     required_technologies_merged?: string[];
     image_path?: string;
@@ -26,6 +27,7 @@ export type ResearchScience = {
 export type GraphNode = {
     id: string;
     title: string;
+    url?: string | null;
     image_path?: string;
     prerequisites: string[];
     level: number;

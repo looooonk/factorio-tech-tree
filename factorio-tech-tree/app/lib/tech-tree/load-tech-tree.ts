@@ -97,6 +97,7 @@ function build_graph_nodes(
     return nodes.map((node) => ({
         id: node.id,
         title: node.title,
+        url: node.url ?? null,
         image_path: node.image_path,
         prerequisites: dependencies.get(node.id) ?? [],
         level: levels.get(node.id) ?? 0,
