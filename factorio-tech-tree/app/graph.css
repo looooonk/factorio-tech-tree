@@ -136,6 +136,44 @@
     z-index: 3;
 }
 
+.graph-shortcuts {
+    position: absolute;
+    left: 16px;
+    bottom: 84px;
+    font-size: 11px;
+    color: var(--ink-soft);
+    z-index: 3;
+    letter-spacing: 0.01em;
+    background: color-mix(in srgb, var(--surface-strong) 72%, transparent);
+    border: 1px solid var(--line);
+    padding: 6px 12px;
+    border-radius: 12px;
+    max-width: min(320px, 85vw);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.graph-shortcut-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    margin-right: 6px;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.graph-shortcut-label {
+    position: relative;
+    top: -1px;
+    margin-right: 4px;
+    color: var(--ink);
+    font-weight: 600;
+}
+
 .graph-credit {
     position: absolute;
     left: 16px;

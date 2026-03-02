@@ -273,6 +273,17 @@ export default function GraphCanvas({
                     ) : null}
                 </div>
             </div>
+            <div className="graph-shortcuts" data-no-pan data-no-zoom>
+                <span>
+                    <span className="graph-shortcut-key" aria-hidden="true">⌫</span>
+                    <span className="graph-shortcut-label">previous</span>
+                </span>
+                <br />
+                <span>
+                    <span className="graph-shortcut-key" aria-hidden="true">⏎</span>
+                    <span className="graph-shortcut-label">next</span>
+                </span>
+            </div>
             <div className="graph-credit" data-no-pan data-no-zoom>
                 <span>Developed by Taehoon Hwang.</span>
                 <br />

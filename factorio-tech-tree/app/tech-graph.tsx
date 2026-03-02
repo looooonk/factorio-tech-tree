@@ -37,6 +37,10 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     const dragged_ref = useRef(false);
     const focus_animation_ref = useRef<number | null>(null);
     const transform_ref = useRef<Transform>(transform);
+    const history_ref = useRef<{ stack: string[]; index: number }>({
+        stack: [],
+        index: -1,
+    });
     const [selected_node_id, set_selected_node_id] = useState<string | null>(
         null,
     );
@@ -207,8 +211,37 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         focus_animation_ref.current = null;
     }, []);
 
-    const focus_node = useCallback(
+    const record_history = useCallback((node_id: string) => {
+        const history = history_ref.current;
+        const { stack } = history;
+        const current_id = stack[history.index];
+        if (current_id === node_id) {
+            return;
+        }
+        if (history.index < stack.length - 1) {
+            stack.splice(history.index + 1);
+        }
+        stack.push(node_id);
+        if (stack.length > 100) {
+            const overflow = stack.length - 100;
+            stack.splice(0, overflow);
+        }
+        history.index = stack.length - 1;
+    }, []);
+
+    const select_node = useCallback(
         (node_id: string) => {
+            record_history(node_id);
+            set_selected_node_id(node_id);
+        },
+        [record_history],
+    );
+
+    const focus_node = useCallback(
+        (node_id: string, options?: { record_history?: boolean }) => {
+            if (options?.record_history !== false) {
+                record_history(node_id);
+            }
             set_selected_node_id(node_id);
             const position = layout.positions[node_id];
             const size = layout.sizes[node_id];
@@ -248,7 +281,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
             };
             focus_animation_ref.current = requestAnimationFrame(animate);
         },
-        [cancel_focus_animation, layout.positions, layout.sizes],
+        [cancel_focus_animation, layout.positions, layout.sizes, record_history],
     );
 
     const fit_to_view = useCallback(() => {
@@ -280,6 +313,52 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
             window.removeEventListener("resize", fit_to_view);
         };
     }, [fit_to_view]);
+
+    const navigate_history = useCallback(
+        (direction: "back" | "forward") => {
+            const history = history_ref.current;
+            const next_index = direction === "back" ? history.index - 1 : history.index + 1;
+            if (next_index < 0 || next_index >= history.stack.length) {
+                return;
+            }
+            history.index = next_index;
+            const node_id = history.stack[next_index];
+            focus_node(node_id, { record_history: false });
+        },
+        [focus_node],
+    );
+
+    useEffect(() => {
+        const is_typing_target = (target: EventTarget | null) => {
+            if (!(target instanceof HTMLElement)) {
+                return false;
+            }
+            if (target.isContentEditable) {
+                return true;
+            }
+            return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+        };
+
+        const on_key_down = (event: KeyboardEvent) => {
+            if (event.defaultPrevented || is_typing_target(event.target)) {
+                return;
+            }
+            if (event.key === "Backspace") {
+                event.preventDefault();
+                navigate_history("back");
+                return;
+            }
+            if (event.key === "Enter") {
+                event.preventDefault();
+                navigate_history("forward");
+            }
+        };
+
+        window.addEventListener("keydown", on_key_down);
+        return () => {
+            window.removeEventListener("keydown", on_key_down);
+        };
+    }, [navigate_history]);
 
     const update_zoom = useCallback(
         (next_scale: number, anchor_x?: number, anchor_y?: number) => {
@@ -415,7 +494,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                 on_zoom_in={() => update_zoom(transform.scale * 1.12)}
                 on_zoom_out={() => update_zoom(transform.scale * 0.88)}
                 on_reset={fit_to_view}
-                on_select_node={set_selected_node_id}
+                on_select_node={select_node}
                 on_focus_node={focus_node}
             />
             <GraphDetails
