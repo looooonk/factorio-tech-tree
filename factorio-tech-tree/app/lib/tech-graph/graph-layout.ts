@@ -22,8 +22,10 @@ export function build_layout(nodes: GraphNode[]): Layout {
         sizes[node.id] = { width: node_width, height: get_node_height(node) };
     }
 
+    const title_collator = new Intl.Collator("en");
+
     for (const level_nodes of nodes_by_level.values()) {
-        level_nodes.sort((a, b) => a.title.localeCompare(b.title));
+        level_nodes.sort((a, b) => title_collator.compare(a.title, b.title));
     }
 
     const max_nodes_per_level = Math.max(
