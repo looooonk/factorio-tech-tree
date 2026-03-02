@@ -415,6 +415,11 @@
     pointer-events: none;
 }
 
+.graph-edges.is-idle .edge-line {
+    stroke: var(--edge-muted);
+    opacity: 0.35;
+}
+
 .edge-line.edge-highlight {
     stroke: var(--edge-strong);
     stroke-width: 3.4;
@@ -422,7 +427,7 @@
 }
 
 .edge-line.edge-dimmed {
-    opacity: 0.2;
+    opacity: 0.08;
 }
 
 .graph-nodes {
@@ -438,7 +443,7 @@
     border-radius: 18px;
     border: 1px solid var(--line);
     background: var(--surface-strong);
-    padding: 14px;
+    padding: 28px 28px 68px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -486,41 +491,33 @@
 }
 
 .graph-node-icon {
-    width: 72px;
-    height: 72px;
+    width: 188px;
+    height: 188px;
     border-radius: 16px;
-    border: 1px solid var(--line);
     display: grid;
     place-items: center;
-    background: var(--surface);
     flex-shrink: 0;
 }
 
 .graph-node-icon img {
-    width: 54px;
-    height: 54px;
+    width: 140px;
+    height: 140px;
     object-fit: contain;
 }
 
 .graph-node-title {
-    font-size: 14px;
+    font-size: 28px;
     line-height: 1.3;
     word-break: break-word;
 }
 
-.graph-node-meta {
-    font-family: var(--font-plex-mono), "IBM Plex Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    color: var(--muted);
-}
-
 .graph-node-science {
-    width: 100%;
+    width: 242px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-wrap: nowrap;
+    gap: var(--science-gap, 6px);
     justify-content: center;
+    align-items: center;
     max-width: 242px;
     align-self: center;
 }
@@ -528,16 +525,18 @@
 .graph-node-science-pack {
     width: 56px;
     height: 56px;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    background: var(--surface);
     display: grid;
     place-items: center;
+    flex-shrink: 0;
+}
+
+.graph-node-science-pack + .graph-node-science-pack {
+    margin-left: calc(-1 * var(--science-overlap, 0px));
 }
 
 .graph-node-science-pack img {
-    width: 40px;
-    height: 40px;
+    width: 56px;
+    height: 56px;
     object-fit: contain;
 }
 
