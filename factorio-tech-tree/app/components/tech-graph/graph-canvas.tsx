@@ -47,6 +47,7 @@ type GraphCanvasProps = {
     on_zoom_out: () => void;
     on_reset: () => void;
     on_select_node: (node_id: string) => void;
+    on_focus_node: (node_id: string) => void;
 };
 
 export default function GraphCanvas({
@@ -78,6 +79,7 @@ export default function GraphCanvas({
     on_zoom_out,
     on_reset,
     on_select_node,
+    on_focus_node,
 }: GraphCanvasProps) {
     const toolbar_ref = useRef<HTMLDivElement | null>(null);
     const filter_ref = useRef<HTMLDivElement | null>(null);
@@ -241,16 +243,16 @@ export default function GraphCanvas({
                                 <div className="graph-filter-empty">No matches.</div>
                             ) : (
                                 search_matches.map((node) => (
-                                    <button
-                                        key={node.id}
-                                        type="button"
-                                        className="graph-filter-result"
-                                        data-no-pan
-                                        onClick={(event) => {
-                                            event.stopPropagation();
-                                            on_select_node(node.id);
-                                        }}
-                                    >
+                                <button
+                                    key={node.id}
+                                    type="button"
+                                    className="graph-filter-result"
+                                    data-no-pan
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        on_focus_node(node.id);
+                                    }}
+                                >
                                         <span className="graph-filter-result-icon">
                                             <img
                                                 src={`/api/tech-image?path=${encodeURIComponent(

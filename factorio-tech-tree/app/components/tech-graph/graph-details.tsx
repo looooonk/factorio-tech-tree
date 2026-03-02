@@ -13,13 +13,13 @@ import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 type GraphDetailsProps = {
     selection: GraphSelection;
     selected_node: GraphNode | null;
-    on_select_node: (node_id: string) => void;
+    on_focus_node: (node_id: string) => void;
 };
 
 export default function GraphDetails({
     selection,
     selected_node,
-    on_select_node,
+    on_focus_node,
 }: GraphDetailsProps) {
     return (
         <aside className="graph-details" data-no-zoom>
@@ -93,7 +93,7 @@ export default function GraphDetails({
                                                 type="button"
                                                 className="details-science-pack details-science-pack-button"
                                                 onClick={() => {
-                                                    on_select_node(internal_name);
+                                                    on_focus_node(internal_name);
                                                 }}
                                                 aria-label={`Open ${pack.name} research`}
                                                 title={`Open ${pack.name} research`}
@@ -130,7 +130,7 @@ export default function GraphDetails({
                                         type="button"
                                         className="details-link"
                                         onClick={() => {
-                                            on_select_node(node.id);
+                                            on_focus_node(node.id);
                                         }}
                                     >
                                         <span className="details-link-icon">
@@ -162,7 +162,7 @@ export default function GraphDetails({
                                         type="button"
                                         className="details-link"
                                         onClick={() => {
-                                            on_select_node(node.id);
+                                            on_focus_node(node.id);
                                         }}
                                     >
                                         <span className="details-link-icon">

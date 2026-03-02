@@ -35,6 +35,8 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     const [is_panning, set_is_panning] = useState(false);
     const pointer_ref = useRef<{ x: number; y: number } | null>(null);
     const dragged_ref = useRef(false);
+    const focus_animation_ref = useRef<number | null>(null);
+    const transform_ref = useRef<Transform>(transform);
     const [selected_node_id, set_selected_node_id] = useState<string | null>(
         null,
     );
@@ -193,6 +195,62 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         set_active_filters(new Set());
     }, []);
 
+    useEffect(() => {
+        transform_ref.current = transform;
+    }, [transform]);
+
+    const cancel_focus_animation = useCallback(() => {
+        if (focus_animation_ref.current === null) {
+            return;
+        }
+        cancelAnimationFrame(focus_animation_ref.current);
+        focus_animation_ref.current = null;
+    }, []);
+
+    const focus_node = useCallback(
+        (node_id: string) => {
+            set_selected_node_id(node_id);
+            const position = layout.positions[node_id];
+            const size = layout.sizes[node_id];
+            if (!position || !size) {
+                return;
+            }
+            const container = container_ref.current;
+            if (!container) {
+                return;
+            }
+            const { width, height } = container.getBoundingClientRect();
+            if (width === 0 || height === 0) {
+                return;
+            }
+            const start = transform_ref.current;
+            const center_x = position.x + size.width / 2;
+            const center_y = position.y + size.height / 2;
+            const target_x = width / 2 - center_x * start.scale;
+            const target_y = height / 2 - center_y * start.scale;
+            cancel_focus_animation();
+            const duration_ms = 440;
+            const start_time = performance.now();
+            const animate = (now: number) => {
+                const elapsed = now - start_time;
+                const progress = Math.min(1, elapsed / duration_ms);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                set_transform({
+                    scale: start.scale,
+                    x: start.x + (target_x - start.x) * eased,
+                    y: start.y + (target_y - start.y) * eased,
+                });
+                if (progress < 1) {
+                    focus_animation_ref.current = requestAnimationFrame(animate);
+                    return;
+                }
+                focus_animation_ref.current = null;
+            };
+            focus_animation_ref.current = requestAnimationFrame(animate);
+        },
+        [cancel_focus_animation, layout.positions, layout.sizes],
+    );
+
     const fit_to_view = useCallback(() => {
         const container = container_ref.current;
         if (!container) {
@@ -211,8 +269,9 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         const x = (width - layout.width * scale) / 2;
         const y = (height - layout.height * scale) / 2;
 
+        cancel_focus_animation();
         set_transform({ x, y, scale });
-    }, [layout.height, layout.width]);
+    }, [cancel_focus_animation, layout.height, layout.width]);
 
     useEffect(() => {
         fit_to_view();
@@ -228,6 +287,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
             if (!container) {
                 return;
             }
+            cancel_focus_animation();
             const rect = container.getBoundingClientRect();
             const anchor = {
                 x: anchor_x ?? rect.width / 2,
@@ -243,7 +303,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                 };
             });
         },
-        [],
+        [cancel_focus_animation],
     );
 
     const on_wheel = useCallback(
@@ -279,12 +339,13 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
             if (target.closest("[data-no-pan]")) {
                 return;
             }
+            cancel_focus_animation();
             event.currentTarget.setPointerCapture(event.pointerId);
             pointer_ref.current = { x: event.clientX, y: event.clientY };
             dragged_ref.current = false;
             set_is_panning(true);
         },
-        [],
+        [cancel_focus_animation],
     );
 
     const on_pointer_move = useCallback(
@@ -355,11 +416,12 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                 on_zoom_out={() => update_zoom(transform.scale * 0.88)}
                 on_reset={fit_to_view}
                 on_select_node={set_selected_node_id}
+                on_focus_node={focus_node}
             />
             <GraphDetails
                 selection={selection}
                 selected_node={selected_node}
-                on_select_node={set_selected_node_id}
+                on_focus_node={focus_node}
             />
         </section>
     );
