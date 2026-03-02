@@ -683,6 +683,25 @@
     justify-content: center;
 }
 
+.details-science-pack-button {
+    padding: 0;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    appearance: none;
+    font-family: inherit;
+}
+
+.details-science-pack-button:hover {
+    border-color: var(--accent-soft);
+    transform: translateY(-1px);
+}
+
+.details-science-pack-button:focus-visible {
+    outline: none;
+    border-color: var(--accent-strong);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
 .details-science-pack img {
     width: 45px;
     height: 45px;

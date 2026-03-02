@@ -88,7 +88,16 @@ export default function GraphDetails({
                                             return null;
                                         }
                                         return (
-                                            <div key={pack.name} className="details-science-pack">
+                                            <button
+                                                key={pack.name}
+                                                type="button"
+                                                className="details-science-pack details-science-pack-button"
+                                                onClick={() => {
+                                                    on_select_node(internal_name);
+                                                }}
+                                                aria-label={`Open ${pack.name} research`}
+                                                title={`Open ${pack.name} research`}
+                                            >
                                                 <img
                                                     src={`/api/tech-image?path=${encodeURIComponent(
                                                         `data/tech_images/${internal_name}.png`,
@@ -96,7 +105,7 @@ export default function GraphDetails({
                                                     alt={pack.name}
                                                     loading="lazy"
                                                 />
-                                            </div>
+                                            </button>
                                         );
                                     })}
                                 </div>
