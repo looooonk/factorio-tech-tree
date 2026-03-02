@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import type { PointerEvent, RefObject } from "react";
 import { FaTools } from "react-icons/fa";
 
+import ThemeToggle from "../theme-toggle";
 import type { GraphNode } from "../../lib/tech-tree/types";
 import type { Layout } from "../../lib/tech-graph/graph-layout";
 import type { GraphEdgePath, Transform } from "../../lib/tech-graph/types";
@@ -126,16 +127,24 @@ export default function GraphCanvas({
             onPointerCancel={on_pointer_up}
             onClick={on_canvas_click}
         >
-            <div className="graph-toolbar" data-no-pan ref={toolbar_ref} style={control_style}>
-                <button type="button" onClick={on_zoom_in}>
-                    Zoom in
-                </button>
-                <button type="button" onClick={on_zoom_out}>
-                    Zoom out
-                </button>
-                <button type="button" onClick={on_reset}>
-                    Reset
-                </button>
+            <div className="graph-toolbar-group" data-no-pan>
+                <div
+                    className="graph-toolbar"
+                    data-no-pan
+                    ref={toolbar_ref}
+                    style={control_style}
+                >
+                    <button type="button" onClick={on_zoom_in}>
+                        Zoom in
+                    </button>
+                    <button type="button" onClick={on_zoom_out}>
+                        Zoom out
+                    </button>
+                    <button type="button" onClick={on_reset}>
+                        Reset
+                    </button>
+                </div>
+                <ThemeToggle />
             </div>
             <div className="graph-filter-stack" data-no-pan data-no-zoom>
                 <div
