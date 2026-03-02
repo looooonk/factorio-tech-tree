@@ -15,6 +15,72 @@
     --edge-muted: #c8d2dc;
     --edge-strong: #1d6f7a;
     --panel: #f1f4f7;
+    --body-glow-1: #ffffff;
+    --body-glow-2: #f1f4f6;
+    --body-glow-3: #e8edf1;
+    --canvas-glow-1: rgba(90, 177, 185, 0.15);
+    --canvas-glow-2: rgba(29, 111, 122, 0.12);
+    --canvas-base-1: #f8fafc;
+    --canvas-base-2: #edf2f6;
+    color-scheme: light dark;
+}
+
+:root[data-theme="light"],
+body[data-theme="light"] {
+    color-scheme: light;
+}
+
+:root[data-theme="dark"],
+body[data-theme="dark"] {
+    --bg: #0b0f14;
+    --surface: #121922;
+    --surface-strong: #16202a;
+    --ink: #eef3f8;
+    --ink-soft: #c2ccd6;
+    --muted: #8794a3;
+    --line: #243040;
+    --accent: #67c6cf;
+    --accent-soft: #4ea3ad;
+    --edge: #3b4b5d;
+    --edge-muted: #2b3644;
+    --edge-strong: #67c6cf;
+    --panel: #0f141b;
+    --body-glow-1: #18212b;
+    --body-glow-2: #111821;
+    --body-glow-3: #0b0f14;
+    --canvas-glow-1: rgba(103, 198, 207, 0.2);
+    --canvas-glow-2: rgba(29, 111, 122, 0.3);
+    --canvas-base-1: #121922;
+    --canvas-base-2: #0f151c;
+    color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]),
+    :root[data-theme="system"],
+    body[data-theme="system"] {
+        --bg: #0b0f14;
+        --surface: #121922;
+        --surface-strong: #16202a;
+        --ink: #eef3f8;
+        --ink-soft: #c2ccd6;
+        --muted: #8794a3;
+        --line: #243040;
+        --accent: #67c6cf;
+        --accent-soft: #4ea3ad;
+        --edge: #3b4b5d;
+        --edge-muted: #2b3644;
+        --edge-strong: #67c6cf;
+        --panel: #0f141b;
+        --body-glow-1: #18212b;
+        --body-glow-2: #111821;
+        --body-glow-3: #0b0f14;
+        --canvas-glow-1: rgba(103, 198, 207, 0.2);
+        --canvas-glow-2: rgba(29, 111, 122, 0.3);
+        --canvas-base-1: #121922;
+        --canvas-base-2: #0f151c;
+        color-scheme: dark;
+    }
 }
 
 @theme inline {
@@ -39,9 +105,9 @@ body {
 
 body {
     background: radial-gradient(1200px 600px at 10% -10%,
-            #ffffff 0%,
-            #f1f4f6 40%,
-            #e8edf1 100%),
+            var(--body-glow-1) 0%,
+            var(--body-glow-2) 40%,
+            var(--body-glow-3) 100%),
         var(--bg);
     color: var(--ink);
     font-family: var(--font-space-grotesk), "Helvetica Neue", Arial, sans-serif;
