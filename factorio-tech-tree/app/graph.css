@@ -146,9 +146,11 @@
     letter-spacing: 0.01em;
     background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
     border: 1px solid var(--line);
-    padding: 6px 10px;
+    padding: 6px 14px;
     border-radius: 999px;
     max-width: min(320px, 85vw);
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .graph-credit a {
