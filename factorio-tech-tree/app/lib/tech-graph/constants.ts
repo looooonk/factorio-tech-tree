@@ -1,14 +1,18 @@
 export const node_width = 300;
 export const node_gap_x = 80;
-export const node_gap_y = 110;
+export const node_gap_y = 165;
 export const canvas_padding = 80;
 export const min_zoom = 0.2;
 export const max_zoom = 2.5;
-export const node_padding_y = 28;
+export const node_padding_top = 28;
+export const node_padding_bottom = 40;
+export const node_padding_x = 56;
 export const node_item_gap = 10;
-export const node_icon_size = 72;
-export const node_title_height = 36;
-export const node_meta_height = 12;
+export const node_science_gap_min = 30;
+export const node_icon_size = 225.6;
+export const node_title_font_size = 28;
+export const node_title_line_height = 37;
+export const node_meta_height = 0;
 export const science_pack_size = 56;
 export const science_pack_gap = 6;
 

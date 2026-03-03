@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import type { PointerEvent, RefObject } from "react";
+import type { CSSProperties, PointerEvent, RefObject } from "react";
 import { FaTools } from "react-icons/fa";
 
 import ThemeToggle from "../theme-toggle";
@@ -85,6 +85,9 @@ export default function GraphCanvas({
     const filter_ref = useRef<HTMLDivElement | null>(null);
     const [controls_width, set_controls_width] = useState<number | null>(null);
     const misc_active = active_filters.has("misc");
+    const science_row_width = 242;
+    const science_pack_size = 56;
+    const science_gap_default = 6;
 
     useLayoutEffect(() => {
         const toolbar = toolbar_ref.current;
@@ -306,7 +309,7 @@ export default function GraphCanvas({
                 }}
             >
                 <svg
-                    className="graph-edges"
+                    className={`graph-edges${highlighted_edge_ids.size === 0 ? " is-idle" : ""}`}
                     width={layout.width}
                     height={layout.height}
                     viewBox={`0 0 ${layout.width} ${layout.height}`}
@@ -332,6 +335,20 @@ export default function GraphCanvas({
                             return null;
                         }
                         const science_icons = get_science_pack_icons(node);
+                        const science_count = science_icons.length;
+                        const science_overlap =
+                            science_count > 4
+                                ? (science_pack_size * science_count - science_row_width) /
+                                  Math.max(1, science_count - 1)
+                                : 0;
+                        const science_gap = science_count > 4 ? 0 : science_gap_default;
+                        const science_style =
+                            science_count > 0
+                                ? ({
+                                      "--science-gap": `${science_gap}px`,
+                                      "--science-overlap": `${science_overlap}px`,
+                                  } as CSSProperties)
+                                : undefined;
                         const size = layout.sizes[node.id] ?? {
                             width: node_width,
                             height: get_node_height(node),
@@ -346,7 +363,7 @@ export default function GraphCanvas({
                                 key={node.id}
                                 type="button"
                                 data-no-pan
-                                className={`graph-node${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_search_match ? " is-search-match" : ""}${is_dimmed || is_filtered_out ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
+                                className={`graph-node${science_icons.length > 0 ? " has-science" : ""}${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_search_match ? " is-search-match" : ""}${is_dimmed || is_filtered_out ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
                                 style={{
                                     left: position.x,
                                     top: position.y,
@@ -369,7 +386,7 @@ export default function GraphCanvas({
                                 </div>
                                 <div className="graph-node-title">{format_title(node.title)}</div>
                                 {science_icons.length > 0 ? (
-                                    <div className="graph-node-science">
+                                    <div className="graph-node-science" style={science_style}>
                                         {science_icons.map((pack) => (
                                             <div
                                                 key={pack.internal_name}
@@ -386,7 +403,6 @@ export default function GraphCanvas({
                                         ))}
                                     </div>
                                 ) : null}
-                                <div className="graph-node-meta">{node.id}</div>
                             </button>
                         );
                     })}

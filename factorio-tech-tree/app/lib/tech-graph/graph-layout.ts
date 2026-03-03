@@ -22,8 +22,26 @@ export function build_layout(nodes: GraphNode[]): Layout {
         sizes[node.id] = { width: node_width, height: get_node_height(node) };
     }
 
+    const normalize_title = (title: string) => title.normalize("NFKD").toLowerCase();
+
     for (const level_nodes of nodes_by_level.values()) {
-        level_nodes.sort((a, b) => a.title.localeCompare(b.title));
+        level_nodes.sort((a, b) => {
+            const title_a = normalize_title(a.title);
+            const title_b = normalize_title(b.title);
+            if (title_a < title_b) {
+                return -1;
+            }
+            if (title_a > title_b) {
+                return 1;
+            }
+            if (a.id < b.id) {
+                return -1;
+            }
+            if (a.id > b.id) {
+                return 1;
+            }
+            return 0;
+        });
     }
 
     const max_nodes_per_level = Math.max(
@@ -42,6 +60,12 @@ export function build_layout(nodes: GraphNode[]): Layout {
             ...level_nodes.map((node) => sizes[node.id]?.height ?? 0),
         );
         level_heights.set(level, row_height);
+    }
+    for (const [level, level_nodes] of nodes_by_level.entries()) {
+        const row_height = level_heights.get(level) ?? 0;
+        for (const node of level_nodes) {
+            sizes[node.id] = { width: node_width, height: row_height };
+        }
     }
 
     const total_levels = max_level + 1;
