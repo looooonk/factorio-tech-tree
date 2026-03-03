@@ -14,8 +14,6 @@ import {
     science_pack_size,
 } from "./constants";
 
-let text_measure_canvas: HTMLCanvasElement | null = null;
-
 export function format_title(title: string) {
     return title.replace(/\s*\(research\)\s*$/i, "").trim();
 }
@@ -72,30 +70,13 @@ export function get_node_icon_path(node: GraphNode) {
     return node.image_path ?? `data/tech_images/${node.id}.png`;
 }
 
-function measure_text_width(text: string, font: string) {
-    if (typeof document === "undefined") {
-        return null;
-    }
-    if (!text_measure_canvas) {
-        text_measure_canvas = document.createElement("canvas");
-    }
-    const context = text_measure_canvas.getContext("2d");
-    if (!context) {
-        return null;
-    }
-    context.font = font;
-    return context.measureText(text).width;
-}
-
 function estimate_title_lines(title: string, max_width: number) {
     const trimmed = title.trim();
     if (!trimmed) {
         return 1;
     }
-    const font = `${node_title_font_size}px "Space Grotesk", "Helvetica Neue", Arial, sans-serif`;
     const avg_char_width = node_title_font_size * 0.56;
-    const width_of = (text: string) =>
-        measure_text_width(text, font) ?? text.length * avg_char_width;
+    const width_of = (text: string) => text.length * avg_char_width;
     const words = trimmed.split(/\s+/);
     let lines = 1;
     let line = "";

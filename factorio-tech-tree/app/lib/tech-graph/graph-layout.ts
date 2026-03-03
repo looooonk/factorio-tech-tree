@@ -22,10 +22,26 @@ export function build_layout(nodes: GraphNode[]): Layout {
         sizes[node.id] = { width: node_width, height: get_node_height(node) };
     }
 
-    const title_collator = new Intl.Collator("en");
+    const normalize_title = (title: string) => title.normalize("NFKD").toLowerCase();
 
     for (const level_nodes of nodes_by_level.values()) {
-        level_nodes.sort((a, b) => title_collator.compare(a.title, b.title));
+        level_nodes.sort((a, b) => {
+            const title_a = normalize_title(a.title);
+            const title_b = normalize_title(b.title);
+            if (title_a < title_b) {
+                return -1;
+            }
+            if (title_a > title_b) {
+                return 1;
+            }
+            if (a.id < b.id) {
+                return -1;
+            }
+            if (a.id > b.id) {
+                return 1;
+            }
+            return 0;
+        });
     }
 
     const max_nodes_per_level = Math.max(
