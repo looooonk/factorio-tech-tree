@@ -363,7 +363,7 @@ export default function GraphCanvas({
                                 key={node.id}
                                 type="button"
                                 data-no-pan
-                                className={`graph-node${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_search_match ? " is-search-match" : ""}${is_dimmed || is_filtered_out ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
+                                className={`graph-node${science_icons.length > 0 ? " has-science" : ""}${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_search_match ? " is-search-match" : ""}${is_dimmed || is_filtered_out ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
                                 style={{
                                     left: position.x,
                                     top: position.y,

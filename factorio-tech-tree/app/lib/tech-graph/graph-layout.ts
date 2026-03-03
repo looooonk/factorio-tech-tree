@@ -61,6 +61,12 @@ export function build_layout(nodes: GraphNode[]): Layout {
         );
         level_heights.set(level, row_height);
     }
+    for (const [level, level_nodes] of nodes_by_level.entries()) {
+        const row_height = level_heights.get(level) ?? 0;
+        for (const node of level_nodes) {
+            sizes[node.id] = { width: node_width, height: row_height };
+        }
+    }
 
     const total_levels = max_level + 1;
     const height =

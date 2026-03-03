@@ -445,7 +445,7 @@
     border-radius: 18px;
     border: 1px solid var(--line);
     background: var(--surface-strong);
-    padding: 28px 28px 68px;
+    padding: 28px 28px 40px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -513,6 +513,10 @@
     word-break: break-word;
 }
 
+.graph-node.has-science .graph-node-title {
+    margin-bottom: 20px;
+}
+
 .graph-node-science {
     width: 242px;
     display: flex;
@@ -522,6 +526,7 @@
     align-items: center;
     max-width: 242px;
     align-self: center;
+    margin-top: auto;
 }
 
 .graph-node-science-pack {
