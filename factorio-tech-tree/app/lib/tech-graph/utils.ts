@@ -68,7 +68,11 @@ export function get_science_pack_icons(node: GraphNode | null | undefined) {
 }
 
 export function get_node_icon_path(node: GraphNode) {
-    return node.image_path ?? `data/tech_images/${node.id}.png`;
+    const path = node.image_path ?? `/data/tech_images/${node.id}.png`;
+    if (!path.startsWith("/") && !path.startsWith("http")) {
+        return `/${path}`;
+    }
+    return path;
 }
 
 function estimate_title_lines(title: string, max_width: number) {

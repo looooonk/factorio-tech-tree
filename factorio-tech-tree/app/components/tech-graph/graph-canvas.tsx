@@ -198,9 +198,7 @@ export default function GraphCanvas({
                                     }}
                                 >
                                     <img
-                                        src={`/api/tech-image?path=${encodeURIComponent(
-                                            filter.icon_path,
-                                        )}`}
+                                        src={filter.icon_path}
                                         alt={filter.label}
                                         loading="lazy"
                                     />
@@ -258,9 +256,7 @@ export default function GraphCanvas({
                                 >
                                         <span className="graph-filter-result-icon">
                                             <img
-                                                src={`/api/tech-image?path=${encodeURIComponent(
-                                                    get_node_icon_path(node),
-                                                )}`}
+                                                src={get_node_icon_path(node)}
                                                 alt={format_title(node.title)}
                                                 loading="lazy"
                                             />
@@ -377,9 +373,7 @@ export default function GraphCanvas({
                             >
                                 <div className="graph-node-icon">
                                     <img
-                                        src={`/api/tech-image?path=${encodeURIComponent(
-                                            get_node_icon_path(node),
-                                        )}`}
+                                        src={get_node_icon_path(node)}
                                         alt={format_title(node.title)}
                                         loading="lazy"
                                     />
@@ -393,9 +387,7 @@ export default function GraphCanvas({
                                                 className="graph-node-science-pack"
                                             >
                                                 <img
-                                                    src={`/api/tech-image?path=${encodeURIComponent(
-                                                        `data/tech_images/${pack.internal_name}.png`,
-                                                    )}`}
+                                                    src={`/data/tech_images/${pack.internal_name}.png`}
                                                     alt={pack.name}
                                                     loading="lazy"
                                                 />

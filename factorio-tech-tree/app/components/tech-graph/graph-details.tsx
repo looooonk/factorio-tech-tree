@@ -33,9 +33,7 @@ export default function GraphDetails({
                 <div className="details-block">
                     <div className="details-selected-icon">
                         <img
-                            src={`/api/tech-image?path=${encodeURIComponent(
-                                get_node_icon_path(selected_node),
-                            )}`}
+                            src={get_node_icon_path(selected_node)}
                             alt={format_title(selected_node.title)}
                             loading="lazy"
                         />
@@ -99,9 +97,7 @@ export default function GraphDetails({
                                                 title={`Open ${pack.name} research`}
                                             >
                                                 <img
-                                                    src={`/api/tech-image?path=${encodeURIComponent(
-                                                        `data/tech_images/${internal_name}.png`,
-                                                    )}`}
+                                                    src={`/data/tech_images/${internal_name}.png`}
                                                     alt={pack.name}
                                                     loading="lazy"
                                                 />
@@ -135,9 +131,7 @@ export default function GraphDetails({
                                     >
                                         <span className="details-link-icon">
                                             <img
-                                                src={`/api/tech-image?path=${encodeURIComponent(
-                                                    get_node_icon_path(node),
-                                                )}`}
+                                                src={get_node_icon_path(node)}
                                                 alt={format_title(node.title)}
                                                 loading="lazy"
                                             />
@@ -167,9 +161,7 @@ export default function GraphDetails({
                                     >
                                         <span className="details-link-icon">
                                             <img
-                                                src={`/api/tech-image?path=${encodeURIComponent(
-                                                    get_node_icon_path(node),
-                                                )}`}
+                                                src={get_node_icon_path(node)}
                                                 alt={format_title(node.title)}
                                                 loading="lazy"
                                             />

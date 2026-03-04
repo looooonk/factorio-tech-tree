@@ -21,7 +21,7 @@ const science_filter_options = Object.entries(science_pack_name_map).map(
     ([name, internal_name]) => ({
         id: internal_name,
         label: name,
-        icon_path: `data/tech_images/${internal_name}.png`,
+        icon_path: `/data/tech_images/${internal_name}.png`,
     }),
 );
 const all_filter_ids = new Set([
@@ -416,7 +416,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     );
 
     const on_wheel = useCallback(
-        (event: React.WheelEvent<HTMLElement>) => {
+        (event: WheelEvent) => {
             const target = event.target as HTMLElement;
             if (target.closest("[data-no-zoom]")) {
                 return;
@@ -438,6 +438,16 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         },
         [transform.scale, update_zoom],
     );
+    useEffect(() => {
+        const container = container_ref.current;
+        if (!container) {
+            return;
+        }
+        container.addEventListener("wheel", on_wheel, { passive: false });
+        return () => {
+            container.removeEventListener("wheel", on_wheel);
+        };
+    }, [on_wheel]);
 
     const on_pointer_down = useCallback(
         (event: React.PointerEvent<HTMLDivElement>) => {
@@ -495,7 +505,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     }, []);
 
     return (
-        <section className="graph-shell" onWheel={on_wheel}>
+        <section className="graph-shell">
             <GraphCanvas
                 container_ref={container_ref}
                 is_panning={is_panning}
