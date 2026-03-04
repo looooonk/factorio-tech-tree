@@ -82,6 +82,67 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
             .filter((edge): edge is GraphEdgePath => edge !== null);
     }, [edges, layout]);
 
+    const selection_index = useMemo(() => {
+        const incoming_edges = new Map<string, GraphEdge[]>();
+        const outgoing_edges = new Map<string, GraphEdge[]>();
+
+        for (const edge of edges) {
+            if (!incoming_edges.has(edge.to)) {
+                incoming_edges.set(edge.to, []);
+            }
+            if (!outgoing_edges.has(edge.from)) {
+                outgoing_edges.set(edge.from, []);
+            }
+            incoming_edges.get(edge.to)?.push(edge);
+            outgoing_edges.get(edge.from)?.push(edge);
+        }
+
+        const index = new Map<
+            string,
+            {
+                selection: GraphSelection;
+                highlighted_edge_ids: Set<string>;
+                related_node_ids: Set<string>;
+            }
+        >();
+
+        for (const node of nodes) {
+            const node_id = node.id;
+            const incoming = incoming_edges.get(node_id) ?? [];
+            const outgoing = outgoing_edges.get(node_id) ?? [];
+            const incoming_nodes = incoming
+                .map((edge) => nodes_by_id.get(edge.from))
+                .filter((entry): entry is GraphNode => Boolean(entry));
+            const outgoing_nodes = outgoing
+                .map((edge) => nodes_by_id.get(edge.to))
+                .filter((entry): entry is GraphNode => Boolean(entry));
+
+            const highlighted_edge_ids = new Set([
+                ...incoming.map((edge) => edge.id),
+                ...outgoing.map((edge) => edge.id),
+            ]);
+            const related_node_ids = new Set([
+                ...incoming_nodes.map((entry) => entry.id),
+                ...outgoing_nodes.map((entry) => entry.id),
+                node_id,
+            ]);
+
+            index.set(node_id, {
+                selection: {
+                    mode: "node" as const,
+                    incoming_edges: incoming,
+                    outgoing_edges: outgoing,
+                    incoming_nodes,
+                    outgoing_nodes,
+                },
+                highlighted_edge_ids,
+                related_node_ids,
+            });
+        }
+
+        return index;
+    }, [edges, nodes, nodes_by_id]);
+
     const selected_node = useMemo(() => {
         if (!selected_node_id) {
             return null;
@@ -89,51 +150,20 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         return nodes_by_id.get(selected_node_id) ?? null;
     }, [nodes_by_id, selected_node_id]);
 
-    const selection = useMemo<GraphSelection>(() => {
-        if (selected_node_id) {
-            const incoming_edges = edges.filter((edge) => edge.to === selected_node_id);
-            const outgoing_edges = edges.filter((edge) => edge.from === selected_node_id);
-            const incoming_nodes = incoming_edges
-                .map((edge) => nodes_by_id.get(edge.from))
-                .filter((node): node is GraphNode => Boolean(node));
-            const outgoing_nodes = outgoing_edges
-                .map((edge) => nodes_by_id.get(edge.to))
-                .filter((node): node is GraphNode => Boolean(node));
+    const empty_selection = useMemo<GraphSelection>(() => ({ mode: "none" as const }), []);
+    const empty_edge_ids = useMemo(() => new Set<string>(), []);
+    const empty_related_ids = useMemo(() => new Set<string>(), []);
 
-            return {
-                mode: "node" as const,
-                incoming_edges,
-                outgoing_edges,
-                incoming_nodes,
-                outgoing_nodes,
-            };
+    const selection_entry = useMemo(() => {
+        if (!selected_node_id) {
+            return null;
         }
+        return selection_index.get(selected_node_id) ?? null;
+    }, [selected_node_id, selection_index]);
 
-        return { mode: "none" as const };
-    }, [edges, nodes_by_id, selected_node_id]);
-
-    const highlighted_edge_ids = useMemo(() => {
-        if (selection.mode === "node") {
-            return new Set([
-                ...selection.incoming_edges.map((edge) => edge.id),
-                ...selection.outgoing_edges.map((edge) => edge.id),
-            ]);
-        }
-
-        return new Set<string>();
-    }, [selection]);
-
-    const related_node_ids = useMemo(() => {
-        if (selection.mode === "node") {
-            return new Set([
-                ...selection.incoming_nodes.map((node) => node.id),
-                ...selection.outgoing_nodes.map((node) => node.id),
-                selected_node_id ?? "",
-            ]);
-        }
-
-        return new Set<string>();
-    }, [selection, selected_node_id]);
+    const selection = selection_entry?.selection ?? empty_selection;
+    const highlighted_edge_ids = selection_entry?.highlighted_edge_ids ?? empty_edge_ids;
+    const related_node_ids = selection_entry?.related_node_ids ?? empty_related_ids;
 
     const filter_match_ids = useMemo(() => {
         const matches = new Set<string>();
