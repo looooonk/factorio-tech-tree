@@ -431,12 +431,21 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
             const anchor_x = clamp(event.clientX - rect.left, 0, rect.width);
             const anchor_y = clamp(event.clientY - rect.top, 0, rect.height);
             update_zoom(
-                transform.scale * zoom_factor,
+                transform_ref.current.scale * zoom_factor,
                 anchor_x,
                 anchor_y,
             );
         },
-        [transform.scale, update_zoom],
+        [update_zoom],
+    );
+
+    const on_zoom_in = useCallback(
+        () => update_zoom(transform_ref.current.scale * 1.12),
+        [update_zoom],
+    );
+    const on_zoom_out = useCallback(
+        () => update_zoom(transform_ref.current.scale * 0.88),
+        [update_zoom],
     );
     useEffect(() => {
         const container = container_ref.current;
@@ -492,16 +501,13 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
             return;
         }
         event.currentTarget.releasePointerCapture(event.pointerId);
+        const was_dragging = dragged_ref.current;
         pointer_ref.current = null;
+        dragged_ref.current = false;
         set_is_panning(false);
-    }, []);
-
-    const on_canvas_click = useCallback(() => {
-        if (dragged_ref.current) {
-            dragged_ref.current = false;
-            return;
+        if (!was_dragging) {
+            set_selected_node_id(null);
         }
-        set_selected_node_id(null);
     }, []);
 
     return (
@@ -530,9 +536,8 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                 on_pointer_down={on_pointer_down}
                 on_pointer_move={on_pointer_move}
                 on_pointer_up={on_pointer_up}
-                on_canvas_click={on_canvas_click}
-                on_zoom_in={() => update_zoom(transform.scale * 1.12)}
-                on_zoom_out={() => update_zoom(transform.scale * 0.88)}
+                on_zoom_in={on_zoom_in}
+                on_zoom_out={on_zoom_out}
                 on_reset={fit_to_view}
                 on_select_node={select_node}
                 on_focus_node={focus_node}
