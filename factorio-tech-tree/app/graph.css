@@ -417,7 +417,7 @@
     pointer-events: none;
 }
 
-.graph-edges.is-idle .edge-line {
+.edge-line.edge-idle {
     stroke: var(--edge-muted);
     opacity: 0.35;
 }
@@ -428,7 +428,7 @@
     opacity: 1;
 }
 
-.graph-edges:not(.is-idle) .edge-line:not(.edge-highlight) {
+.edge-line.edge-dimmed {
     opacity: 0.08;
 }
 
@@ -477,8 +477,7 @@
     box-shadow: 0 14px 26px -22px rgba(29, 111, 122, 0.45);
 }
 
-.graph-node.is-dimmed,
-.graph-nodes.has-selection .graph-node:not(.is-related):not(.is-selected) {
+.graph-node.is-dimmed {
     opacity: 0.45;
 }
 

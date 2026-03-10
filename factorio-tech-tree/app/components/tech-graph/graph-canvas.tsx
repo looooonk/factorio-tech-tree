@@ -302,24 +302,26 @@ export default function GraphCanvas({
                 }}
             >
                 <svg
-                    className={`graph-edges${highlighted_edge_ids.size === 0 ? " is-idle" : ""}`}
+                    className="graph-edges"
                     width={layout.width}
                     height={layout.height}
                     viewBox={`0 0 ${layout.width} ${layout.height}`}
                 >
                     {edges.map((edge) => {
                         const is_highlighted = highlighted_edge_ids.has(edge.id);
+                        const is_edge_idle = highlighted_edge_ids.size === 0;
+                        const is_edge_dimmed = !is_edge_idle && !is_highlighted;
                         return (
                             <g key={edge.id}>
                                 <path
-                                    className={`edge-line${is_highlighted ? " edge-highlight" : ""}`}
+                                    className={`edge-line${is_edge_idle ? " edge-idle" : ""}${is_highlighted ? " edge-highlight" : ""}${is_edge_dimmed ? " edge-dimmed" : ""}`}
                                     d={edge.path}
                                 />
                             </g>
                         );
                     })}
                 </svg>
-                <div className={`graph-nodes${related_node_ids.size > 0 ? " has-selection" : ""}`}>
+                <div className="graph-nodes">
                     {nodes.map((node) => {
                         const position = layout.positions[node.id];
                         if (!position) {
@@ -346,6 +348,7 @@ export default function GraphCanvas({
                         };
                         const is_selected = selected_node_id === node.id;
                         const is_related = related_node_ids.has(node.id);
+                        const is_selection_dimmed = related_node_ids.size > 0 && !is_related;
                         const is_filtered_out = !filter_match_ids.has(node.id);
                         const is_search_match = search_match_ids.has(node.id);
                         return (
@@ -353,7 +356,7 @@ export default function GraphCanvas({
                                 key={node.id}
                                 type="button"
                                 data-no-pan
-                                className={`graph-node${science_icons.length > 0 ? " has-science" : ""}${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_search_match ? " is-search-match" : ""}${is_filtered_out ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
+                                className={`graph-node${science_icons.length > 0 ? " has-science" : ""}${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_search_match ? " is-search-match" : ""}${is_selection_dimmed || is_filtered_out ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
                                 style={{
                                     left: position.x,
                                     top: position.y,
