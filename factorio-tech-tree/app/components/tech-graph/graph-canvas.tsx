@@ -42,7 +42,6 @@ type GraphCanvasProps = {
     on_pointer_down: (event: PointerEvent<HTMLDivElement>) => void;
     on_pointer_move: (event: PointerEvent<HTMLDivElement>) => void;
     on_pointer_up: (event: PointerEvent<HTMLDivElement>) => void;
-    on_canvas_click: () => void;
     on_zoom_in: () => void;
     on_zoom_out: () => void;
     on_reset: () => void;
@@ -74,7 +73,6 @@ export default function GraphCanvas({
     on_pointer_down,
     on_pointer_move,
     on_pointer_up,
-    on_canvas_click,
     on_zoom_in,
     on_zoom_out,
     on_reset,
@@ -130,7 +128,6 @@ export default function GraphCanvas({
             onPointerMove={on_pointer_move}
             onPointerUp={on_pointer_up}
             onPointerCancel={on_pointer_up}
-            onClick={on_canvas_click}
         >
             <div className="graph-toolbar-group" data-no-pan>
                 <div
@@ -305,26 +302,24 @@ export default function GraphCanvas({
                 }}
             >
                 <svg
-                    className={`graph-edges${highlighted_edge_ids.size === 0 ? " is-idle" : ""}`}
+                    className={`graph-edges${highlighted_edge_ids.size > 0 ? " has-selection" : ""}`}
                     width={layout.width}
                     height={layout.height}
                     viewBox={`0 0 ${layout.width} ${layout.height}`}
                 >
                     {edges.map((edge) => {
                         const is_highlighted = highlighted_edge_ids.has(edge.id);
-                        const is_dimmed =
-                            highlighted_edge_ids.size > 0 && !highlighted_edge_ids.has(edge.id);
                         return (
                             <g key={edge.id}>
                                 <path
-                                    className={`edge-line${is_dimmed ? " edge-dimmed" : ""}${is_highlighted ? " edge-highlight" : ""}`}
+                                    className={`edge-line${is_highlighted ? " edge-highlight" : ""}`}
                                     d={edge.path}
                                 />
                             </g>
                         );
                     })}
                 </svg>
-                <div className="graph-nodes">
+                <div className={`graph-nodes${related_node_ids.size > 0 ? " has-selection" : ""}`}>
                     {nodes.map((node) => {
                         const position = layout.positions[node.id];
                         if (!position) {
@@ -351,7 +346,6 @@ export default function GraphCanvas({
                         };
                         const is_selected = selected_node_id === node.id;
                         const is_related = related_node_ids.has(node.id);
-                        const is_dimmed = related_node_ids.size > 0 && !related_node_ids.has(node.id);
                         const is_filtered_out = !filter_match_ids.has(node.id);
                         const is_search_match = search_match_ids.has(node.id);
                         return (
@@ -359,7 +353,7 @@ export default function GraphCanvas({
                                 key={node.id}
                                 type="button"
                                 data-no-pan
-                                className={`graph-node${science_icons.length > 0 ? " has-science" : ""}${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_search_match ? " is-search-match" : ""}${is_dimmed || is_filtered_out ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
+                                className={`graph-node${science_icons.length > 0 ? " has-science" : ""}${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_search_match ? " is-search-match" : ""}${is_filtered_out ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
                                 style={{
                                     left: position.x,
                                     top: position.y,

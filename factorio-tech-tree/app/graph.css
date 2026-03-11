@@ -410,26 +410,20 @@
 
 .edge-line {
     fill: none;
-    stroke: var(--edge);
+    stroke: var(--edge-muted);
     stroke-width: 2.5;
-    opacity: 0.7;
-    transition: opacity 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease;
+    opacity: 0.35;
     pointer-events: none;
 }
 
-.graph-edges.is-idle .edge-line {
-    stroke: var(--edge-muted);
-    opacity: 0.35;
+.graph-edges.has-selection .edge-line {
+    opacity: 0.08;
 }
 
-.edge-line.edge-highlight {
+.graph-edges.has-selection .edge-line.edge-highlight {
     stroke: var(--edge-strong);
     stroke-width: 3.4;
     opacity: 1;
-}
-
-.edge-line.edge-dimmed {
-    opacity: 0.08;
 }
 
 .graph-nodes {
@@ -477,7 +471,8 @@
     box-shadow: 0 14px 26px -22px rgba(29, 111, 122, 0.45);
 }
 
-.graph-node.is-dimmed {
+.graph-node.is-dimmed,
+.graph-nodes.has-selection .graph-node:not(.is-related):not(.is-selected) {
     opacity: 0.45;
 }
 
