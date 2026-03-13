@@ -6,6 +6,7 @@ import GraphCanvas from "./components/tech-graph/graph-canvas";
 import GraphDetails from "./components/tech-graph/graph-details";
 import type { GraphEdge, GraphNode } from "./lib/tech-tree/types";
 import { build_layout } from "./lib/tech-graph/graph-layout";
+import type { LayoutDirection } from "./lib/tech-graph/graph-layout";
 import { max_zoom, min_zoom, node_width, science_pack_name_map } from "./lib/tech-graph/constants";
 import type { GraphEdgePath, GraphSelection, Transform } from "./lib/tech-graph/types";
 import { clamp } from "./lib/tech-graph/utils";
@@ -37,6 +38,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     const dragged_ref = useRef(false);
     const focus_animation_ref = useRef<number | null>(null);
     const transform_ref = useRef<Transform>(transform);
+    const pending_layout_focus_ref = useRef<string | null>(null);
     const history_ref = useRef<{ stack: string[]; index: number }>({
         stack: [],
         index: -1,
@@ -48,6 +50,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         () => new Set(all_filter_ids),
     );
     const [search_query, set_search_query] = useState("");
+    const [layout_direction, set_layout_direction] = useState<LayoutDirection>("vertical");
 
     const root_set = useMemo(() => new Set(root_ids), [root_ids]);
     const nodes_by_id = useMemo(
@@ -55,7 +58,18 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         [nodes],
     );
 
-    const layout = useMemo(() => build_layout(nodes), [nodes]);
+    useEffect(() => {
+        const stored = window.localStorage.getItem("layout_direction");
+        if (stored === "vertical" || stored === "horizontal") {
+            set_layout_direction(stored);
+        }
+    }, []);
+
+    useEffect(() => {
+        window.localStorage.setItem("layout_direction", layout_direction);
+    }, [layout_direction]);
+
+    const layout = useMemo(() => build_layout(nodes, layout_direction), [nodes, layout_direction]);
 
     const edges_with_paths = useMemo<GraphEdgePath[]>(() => {
         return edges
@@ -71,16 +85,27 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                     return null;
                 }
 
-                const start_x = from_pos.x + (from_size?.width ?? node_width) / 2;
-                const start_y = from_pos.y + (from_size?.height ?? 0);
-                const end_x = to_pos.x + (to_size?.width ?? node_width) / 2;
-                const end_y = to_pos.y;
-                const mid_y = start_y + (end_y - start_y) * 0.55;
-                const path = `M ${start_x} ${start_y} C ${start_x} ${mid_y}, ${end_x} ${mid_y}, ${end_x} ${end_y}`;
+                let path: string;
+                if (layout_direction === "horizontal") {
+                    // Edges run left-to-right: exit right side of source, enter left side of dest.
+                    const start_x = from_pos.x + (from_size?.width ?? node_width);
+                    const start_y = from_pos.y + (from_size?.height ?? 0) / 2;
+                    const end_x = to_pos.x;
+                    const end_y = to_pos.y + (to_size?.height ?? 0) / 2;
+                    const mid_x = start_x + (end_x - start_x) * 0.55;
+                    path = `M ${start_x} ${start_y} C ${mid_x} ${start_y}, ${mid_x} ${end_y}, ${end_x} ${end_y}`;
+                } else {
+                    const start_x = from_pos.x + (from_size?.width ?? node_width) / 2;
+                    const start_y = from_pos.y + (from_size?.height ?? 0);
+                    const end_x = to_pos.x + (to_size?.width ?? node_width) / 2;
+                    const end_y = to_pos.y;
+                    const mid_y = start_y + (end_y - start_y) * 0.55;
+                    path = `M ${start_x} ${start_y} C ${start_x} ${mid_y}, ${end_x} ${mid_y}, ${end_x} ${end_y}`;
+                }
                 return { ...edge, path };
             })
             .filter((edge): edge is GraphEdgePath => edge !== null);
-    }, [edges, layout]);
+    }, [edges, layout, layout_direction]);
 
     const selection_index = useMemo(() => {
         const incoming_edges = new Map<string, GraphEdge[]>();
@@ -315,6 +340,9 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     );
 
     const fit_to_view = useCallback(() => {
+        if (pending_layout_focus_ref.current) {
+            return;
+        }
         const container = container_ref.current;
         if (!container) {
             return;
@@ -343,6 +371,26 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
             window.removeEventListener("resize", fit_to_view);
         };
     }, [fit_to_view]);
+
+    // After a direction change, focus the previously selected node instead of fitting all nodes.
+    useEffect(() => {
+        const node_id = pending_layout_focus_ref.current;
+        if (!node_id) {
+            return;
+        }
+        pending_layout_focus_ref.current = null;
+        focus_node(node_id, { record_history: false });
+    }, [layout_direction, focus_node]);
+
+    const on_change_layout_direction = useCallback(
+        (direction: LayoutDirection) => {
+            if (selected_node_id) {
+                pending_layout_focus_ref.current = selected_node_id;
+            }
+            set_layout_direction(direction);
+        },
+        [selected_node_id],
+    );
 
     const navigate_history = useCallback(
         (direction: "back" | "forward") => {
@@ -541,6 +589,8 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                 on_reset={fit_to_view}
                 on_select_node={select_node}
                 on_focus_node={focus_node}
+                layout_direction={layout_direction}
+                on_change_layout_direction={on_change_layout_direction}
             />
             <GraphDetails
                 selection={selection}

@@ -3,7 +3,9 @@ import type { CSSProperties, PointerEvent, RefObject } from "react";
 import { FaTools } from "react-icons/fa";
 
 import ThemeToggle from "../theme-toggle";
+import LayoutToggle from "../layout-toggle";
 import type { GraphNode } from "../../lib/tech-tree/types";
+import type { LayoutDirection } from "../../lib/tech-graph/graph-layout";
 import type { Layout } from "../../lib/tech-graph/graph-layout";
 import type { GraphEdgePath, Transform } from "../../lib/tech-graph/types";
 import { node_width } from "../../lib/tech-graph/constants";
@@ -47,6 +49,8 @@ type GraphCanvasProps = {
     on_reset: () => void;
     on_select_node: (node_id: string) => void;
     on_focus_node: (node_id: string) => void;
+    layout_direction: LayoutDirection;
+    on_change_layout_direction: (direction: LayoutDirection) => void;
 };
 
 export default function GraphCanvas({
@@ -78,6 +82,8 @@ export default function GraphCanvas({
     on_reset,
     on_select_node,
     on_focus_node,
+    layout_direction,
+    on_change_layout_direction,
 }: GraphCanvasProps) {
     const toolbar_ref = useRef<HTMLDivElement | null>(null);
     const filter_ref = useRef<HTMLDivElement | null>(null);
@@ -146,6 +152,7 @@ export default function GraphCanvas({
                         Reset
                     </button>
                 </div>
+                <LayoutToggle direction={layout_direction} on_change={on_change_layout_direction} />
                 <ThemeToggle />
             </div>
             <div className="graph-filter-stack" data-no-pan data-no-zoom>
