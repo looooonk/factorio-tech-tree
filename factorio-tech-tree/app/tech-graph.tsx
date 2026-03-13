@@ -10,6 +10,7 @@ import type { LayoutDirection } from "./lib/tech-graph/graph-layout";
 import { max_zoom, min_zoom, node_width, science_pack_name_map } from "./lib/tech-graph/constants";
 import type { GraphEdgePath, GraphSelection, Transform } from "./lib/tech-graph/types";
 import { clamp } from "./lib/tech-graph/utils";
+import type { DepthMode } from "./components/depth-toggle";
 
 type GraphViewProps = {
     nodes: GraphNode[];
@@ -51,6 +52,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     );
     const [search_query, set_search_query] = useState("");
     const [layout_direction, set_layout_direction] = useState<LayoutDirection>("vertical");
+    const [depth_mode, set_depth_mode] = useState<DepthMode>("direct");
 
     const root_set = useMemo(() => new Set(root_ids), [root_ids]);
     const nodes_by_id = useMemo(
@@ -63,11 +65,19 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         if (stored === "vertical" || stored === "horizontal") {
             set_layout_direction(stored);
         }
+        const stored_depth = window.localStorage.getItem("depth_mode");
+        if (stored_depth === "direct" || stored_depth === "ancestors") {
+            set_depth_mode(stored_depth);
+        }
     }, []);
 
     useEffect(() => {
         window.localStorage.setItem("layout_direction", layout_direction);
     }, [layout_direction]);
+
+    useEffect(() => {
+        window.localStorage.setItem("depth_mode", depth_mode);
+    }, [depth_mode]);
 
     const layout = useMemo(() => build_layout(nodes, layout_direction), [nodes, layout_direction]);
 
@@ -168,6 +178,51 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         return index;
     }, [edges, nodes, nodes_by_id]);
 
+    // Precompute full ancestor sets (all transitive prerequisites) for every node via BFS.
+    const ancestors_index = useMemo(() => {
+        const incoming_edges_map = new Map<string, GraphEdge[]>();
+        for (const edge of edges) {
+            if (!incoming_edges_map.has(edge.to)) {
+                incoming_edges_map.set(edge.to, []);
+            }
+            incoming_edges_map.get(edge.to)!.push(edge);
+        }
+
+        const result = new Map<string, { node_ids: Set<string>; edge_ids: Set<string> }>();
+        for (const node of nodes) {
+            // Phase 1: find all ancestor nodes via BFS.
+            // Use a separate visited set so a node reached via multiple paths is still
+            // enqueued only once, but we don't conflate "visited" with the result set.
+            const ancestor_node_ids = new Set<string>();
+            const visited = new Set<string>([node.id]);
+            const queue: string[] = [node.id];
+            while (queue.length > 0) {
+                const current_id = queue.shift()!;
+                for (const edge of incoming_edges_map.get(current_id) ?? []) {
+                    if (!visited.has(edge.from)) {
+                        visited.add(edge.from);
+                        ancestor_node_ids.add(edge.from);
+                        queue.push(edge.from);
+                    }
+                }
+            }
+
+            // Phase 2: collect every edge whose both endpoints are within the ancestor
+            // subgraph (including the selected node). This catches edges that were skipped
+            // in the BFS because one endpoint was already visited via a different path.
+            const relevant = new Set([...ancestor_node_ids, node.id]);
+            const ancestor_edge_ids = new Set<string>();
+            for (const edge of edges) {
+                if (relevant.has(edge.from) && relevant.has(edge.to)) {
+                    ancestor_edge_ids.add(edge.id);
+                }
+            }
+
+            result.set(node.id, { node_ids: ancestor_node_ids, edge_ids: ancestor_edge_ids });
+        }
+        return result;
+    }, [edges, nodes]);
+
     const selected_node = useMemo(() => {
         if (!selected_node_id) {
             return null;
@@ -187,8 +242,30 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     }, [selected_node_id, selection_index]);
 
     const selection = selection_entry?.selection ?? empty_selection;
-    const highlighted_edge_ids = selection_entry?.highlighted_edge_ids ?? empty_edge_ids;
-    const related_node_ids = selection_entry?.related_node_ids ?? empty_related_ids;
+
+    const highlighted_edge_ids = useMemo(() => {
+        const base = selection_entry?.highlighted_edge_ids ?? empty_edge_ids;
+        if (!selected_node_id || depth_mode === "direct") {
+            return base;
+        }
+        const ancestors = ancestors_index.get(selected_node_id);
+        if (!ancestors) {
+            return base;
+        }
+        return new Set([...base, ...ancestors.edge_ids]);
+    }, [ancestors_index, depth_mode, empty_edge_ids, selected_node_id, selection_entry]);
+
+    const related_node_ids = useMemo(() => {
+        const base = selection_entry?.related_node_ids ?? empty_related_ids;
+        if (!selected_node_id || depth_mode === "direct") {
+            return base;
+        }
+        const ancestors = ancestors_index.get(selected_node_id);
+        if (!ancestors) {
+            return base;
+        }
+        return new Set([...base, ...ancestors.node_ids]);
+    }, [ancestors_index, depth_mode, empty_related_ids, selected_node_id, selection_entry]);
 
     const filter_match_ids = useMemo(() => {
         const matches = new Set<string>();
@@ -589,6 +666,8 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                 on_reset={fit_to_view}
                 on_select_node={select_node}
                 on_focus_node={focus_node}
+                depth_mode={depth_mode}
+                on_change_depth_mode={set_depth_mode}
                 layout_direction={layout_direction}
                 on_change_layout_direction={on_change_layout_direction}
             />
