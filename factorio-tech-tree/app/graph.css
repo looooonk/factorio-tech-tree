@@ -487,6 +487,12 @@
     background: color-mix(in srgb, #d97706 18%, var(--surface-strong));
 }
 
+.group-column-bg {
+    fill: color-mix(in srgb, #d97706 7%, transparent);
+    stroke: color-mix(in srgb, #d97706 28%, transparent);
+    stroke-width: 1.5;
+}
+
 .graph-node-icon {
     width: 225.6px;
     height: 225.6px;

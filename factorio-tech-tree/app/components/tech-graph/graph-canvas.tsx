@@ -321,6 +321,17 @@ export default function GraphCanvas({
                     height={layout.height}
                     viewBox={`0 0 ${layout.width} ${layout.height}`}
                 >
+                    {layout.group_columns.map((col, i) => (
+                        <rect
+                            key={i}
+                            className="group-column-bg"
+                            x={col.x}
+                            y={col.y}
+                            width={col.width}
+                            height={col.height}
+                            rx={24}
+                        />
+                    ))}
                     {edges.map((edge) => {
                         const is_highlighted = highlighted_edge_ids.has(edge.id);
                         return (
