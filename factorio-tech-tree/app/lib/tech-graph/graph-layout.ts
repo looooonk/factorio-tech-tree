@@ -2,8 +2,6 @@ import type { GraphNode } from "../tech-tree/types";
 import { canvas_padding, node_gap_x, node_gap_y, node_width } from "./constants";
 import { get_node_height } from "./utils";
 
-export type LayoutDirection = "vertical" | "horizontal";
-
 export type GroupColumn = {
     x: number;
     y: number;
@@ -52,7 +50,7 @@ function detect_group_membership(nodes: GraphNode[]): Map<string, string> {
     return result;
 }
 
-export function build_layout(nodes: GraphNode[], direction: LayoutDirection = "vertical"): Layout {
+export function build_layout(nodes: GraphNode[]): Layout {
     const nodes_by_level = new Map<number, GraphNode[]>();
     let max_level = 0;
     const sizes: Record<string, { width: number; height: number }> = {};
@@ -96,45 +94,7 @@ export function build_layout(nodes: GraphNode[], direction: LayoutDirection = "v
         }
     }
 
-    if (direction === "horizontal") {
-        // Levels arranged left-to-right; nodes within a level stacked top-to-bottom.
-        // node_gap_y reused as the gap between level columns; node_gap_x as vertical node gap.
-        const width =
-            canvas_padding * 2 +
-            total_levels * node_width +
-            Math.max(0, total_levels - 1) * node_gap_y;
-
-        let max_column_height = 0;
-        for (const [level, level_nodes] of nodes_by_level.entries()) {
-            const row_height = level_heights.get(level) ?? 0;
-            const count = level_nodes.length;
-            const col_height = count * row_height + Math.max(0, count - 1) * node_gap_x;
-            max_column_height = Math.max(max_column_height, col_height);
-        }
-        const height = canvas_padding * 2 + max_column_height;
-
-        const positions: Record<string, { x: number; y: number }> = {};
-        for (let level = 0; level <= max_level; level += 1) {
-            const level_nodes = nodes_by_level.get(level) ?? [];
-            const row_height = level_heights.get(level) ?? 0;
-            const count = level_nodes.length;
-            const col_height = count * row_height + Math.max(0, count - 1) * node_gap_x;
-
-            const col_x = canvas_padding + level * (node_width + node_gap_y);
-            const offset_y = canvas_padding + Math.max(0, (max_column_height - col_height) / 2);
-
-            for (const [index, node] of level_nodes.entries()) {
-                positions[node.id] = {
-                    x: col_x,
-                    y: offset_y + index * (row_height + node_gap_x),
-                };
-            }
-        }
-
-        return { width, height, positions, sizes, group_columns: [] };
-    }
-
-    // Vertical layout: levels top-to-bottom; infinite research groups in side lanes flanking trunk.
+    // Levels top-to-bottom; infinite research groups in side lanes flanking trunk.
     const group_membership = detect_group_membership(nodes);
     // Groups with 2 or fewer members are merged back into the trunk.
     const group_sizes = new Map<string, number>();

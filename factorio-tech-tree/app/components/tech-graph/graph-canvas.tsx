@@ -3,11 +3,9 @@ import type { CSSProperties, PointerEvent, RefObject } from "react";
 import { FaTools } from "react-icons/fa";
 
 import ThemeToggle from "../theme-toggle";
-import LayoutToggle from "../layout-toggle";
 import DepthToggle from "../depth-toggle";
 import type { DepthMode } from "../depth-toggle";
 import type { GraphNode } from "../../lib/tech-tree/types";
-import type { LayoutDirection } from "../../lib/tech-graph/graph-layout";
 import type { Layout } from "../../lib/tech-graph/graph-layout";
 import type { GraphEdgePath, Transform } from "../../lib/tech-graph/types";
 import { node_width } from "../../lib/tech-graph/constants";
@@ -53,8 +51,6 @@ type GraphCanvasProps = {
     on_focus_node: (node_id: string) => void;
     depth_mode: DepthMode;
     on_change_depth_mode: (mode: DepthMode) => void;
-    layout_direction: LayoutDirection;
-    on_change_layout_direction: (direction: LayoutDirection) => void;
 };
 
 export default function GraphCanvas({
@@ -88,8 +84,6 @@ export default function GraphCanvas({
     on_focus_node,
     depth_mode,
     on_change_depth_mode,
-    layout_direction,
-    on_change_layout_direction,
 }: GraphCanvasProps) {
     const toolbar_ref = useRef<HTMLDivElement | null>(null);
     const filter_ref = useRef<HTMLDivElement | null>(null);
@@ -158,7 +152,6 @@ export default function GraphCanvas({
                         Reset
                     </button>
                 </div>
-                <LayoutToggle direction={layout_direction} on_change={on_change_layout_direction} />
                 <DepthToggle mode={depth_mode} on_change={on_change_depth_mode} />
                 <ThemeToggle />
             </div>
