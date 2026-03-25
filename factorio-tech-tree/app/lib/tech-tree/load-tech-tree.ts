@@ -53,7 +53,11 @@ function build_levels(nodes: TechNode[], dependencies: Map<string, string[]>) {
     const remaining = new Set(nodes.map((node) => node.id));
     let remaining_last = remaining.size + 1;
 
-    // Resolve levels in topological order, then fall back for any cycles.
+    // Topological level resolution: each pass assigns a level to any node whose
+    // every dependency is already resolved. The loop terminates when either all
+    // nodes are resolved or a full pass produces no progress, which means the
+    // remaining nodes form a cycle. Cyclic nodes are assigned a best-effort
+    // level below (using whatever deps were resolved).
     while (remaining.size > 0 && remaining.size < remaining_last) {
         remaining_last = remaining.size;
         for (const id of Array.from(remaining)) {

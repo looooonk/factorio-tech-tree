@@ -8,13 +8,15 @@ import type { DepthMode } from "../depth-toggle";
 import type { GraphNode } from "../../lib/tech-tree/types";
 import type { Layout } from "../../lib/tech-graph/graph-layout";
 import type { GraphEdgePath, Transform } from "../../lib/tech-graph/types";
-import { node_width } from "../../lib/tech-graph/constants";
+import { node_width, science_pack_size, science_pack_gap } from "../../lib/tech-graph/constants";
 import {
     format_title,
     get_node_height,
     get_node_icon_path,
     get_science_pack_icons,
 } from "../../lib/tech-graph/utils";
+
+// --- Types ---
 
 type GraphCanvasProps = {
     container_ref: RefObject<HTMLDivElement | null>;
@@ -53,6 +55,105 @@ type GraphCanvasProps = {
     on_change_depth_mode: (mode: DepthMode) => void;
 };
 
+// --- Sub-components ---
+
+type GraphNodeButtonProps = {
+    node: GraphNode;
+    layout: Layout;
+    is_selected: boolean;
+    is_related: boolean;
+    is_filtered_out: boolean;
+    is_search_match: boolean;
+    is_root: boolean;
+    on_select_node: (node_id: string) => void;
+};
+
+/**
+ * The maximum number of science packs that fit at full size before we need to
+ * compress them via negative-margin overlap. 4 packs × 56px + 3 gaps × 6px = 242px.
+ */
+const science_row_max_width = 4 * science_pack_size + 3 * science_pack_gap;
+
+/** Renders a single tech-tree node button with its icon, title, and science pack row. */
+function GraphNodeButton({
+    node,
+    layout,
+    is_selected,
+    is_related,
+    is_filtered_out,
+    is_search_match,
+    is_root,
+    on_select_node,
+}: GraphNodeButtonProps) {
+    const position = layout.positions[node.id];
+    if (!position) return null;
+
+    const science_icons = get_science_pack_icons(node);
+    const science_count = science_icons.length;
+    const size = layout.sizes[node.id] ?? { width: node_width, height: get_node_height(node) };
+
+    // When more than 4 packs are present, overlap them so the row stays within
+    // science_row_max_width. Otherwise use the normal gap between icons.
+    const science_overlap =
+        science_count > 4
+            ? (science_pack_size * science_count - science_row_max_width) /
+              Math.max(1, science_count - 1)
+            : 0;
+    const science_style: CSSProperties | undefined =
+        science_count > 0
+            ? {
+                  "--science-gap": `${science_count > 4 ? 0 : science_pack_gap}px`,
+                  "--science-overlap": `${science_overlap}px`,
+              } as CSSProperties
+            : undefined;
+
+    const class_name = [
+        "graph-node",
+        science_icons.length > 0 && "has-science",
+        is_selected && "is-selected",
+        is_related && "is-related",
+        is_search_match && "is-search-match",
+        is_filtered_out && "is-dimmed",
+        is_root && "is-root",
+        node.is_infinite && "is-infinite",
+    ]
+        .filter(Boolean)
+        .join(" ");
+
+    return (
+        <button
+            type="button"
+            data-no-pan
+            className={class_name}
+            style={{ left: position.x, top: position.y, width: size.width, height: size.height }}
+            onClick={(event) => {
+                event.stopPropagation();
+                on_select_node(node.id);
+            }}
+        >
+            <div className="graph-node-icon">
+                <img src={get_node_icon_path(node)} alt={format_title(node.title)} loading="lazy" />
+            </div>
+            <div className="graph-node-title">{format_title(node.title)}</div>
+            {science_icons.length > 0 && (
+                <div className="graph-node-science" style={science_style}>
+                    {science_icons.map((pack) => (
+                        <div key={pack.internal_name} className="graph-node-science-pack">
+                            <img
+                                src={`/data/tech_images/${pack.internal_name}.png`}
+                                alt={pack.name}
+                                loading="lazy"
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+        </button>
+    );
+}
+
+// --- Main component ---
+
 export default function GraphCanvas({
     container_ref,
     is_panning,
@@ -89,39 +190,32 @@ export default function GraphCanvas({
     const filter_ref = useRef<HTMLDivElement | null>(null);
     const [controls_width, set_controls_width] = useState<number | null>(null);
     const misc_active = active_filters.has("misc");
-    const science_row_width = 242;
-    const science_pack_size = 56;
-    const science_gap_default = 6;
 
+    // Synchronize the width of the toolbar and filter panel so they stay the
+    // same width as either one grows. A ResizeObserver fires whenever either
+    // element changes size (e.g. on first paint or dynamic content changes).
     useLayoutEffect(() => {
         const toolbar = toolbar_ref.current;
         const filter = filter_ref.current;
-        if (!toolbar || !filter) {
-            return;
-        }
+        if (!toolbar || !filter) return;
 
         const update_width = () => {
-            const toolbar_width = toolbar.getBoundingClientRect().width;
-            const filter_width = filter.getBoundingClientRect().width;
-            const next_width = Math.max(toolbar_width, filter_width);
+            const next_width = Math.max(
+                toolbar.getBoundingClientRect().width,
+                filter.getBoundingClientRect().width,
+            );
             set_controls_width((current) => {
-                if (current && Math.abs(current - next_width) < 0.5) {
-                    return current;
-                }
+                // Avoid triggering re-renders for sub-pixel fluctuations.
+                if (current !== null && Math.abs(current - next_width) < 0.5) return current;
                 return next_width;
             });
         };
 
         update_width();
-        const observer = new ResizeObserver(() => {
-            update_width();
-        });
+        const observer = new ResizeObserver(update_width);
         observer.observe(toolbar);
         observer.observe(filter);
-
-        return () => {
-            observer.disconnect();
-        };
+        return () => observer.disconnect();
     }, []);
 
     const control_style = controls_width ? { width: `${controls_width}px` } : undefined;
@@ -135,6 +229,7 @@ export default function GraphCanvas({
             onPointerUp={on_pointer_up}
             onPointerCancel={on_pointer_up}
         >
+            {/* --- Toolbar (zoom controls + toggles) --- */}
             <div className="graph-toolbar-group" data-no-pan>
                 <div
                     className="graph-toolbar"
@@ -155,6 +250,8 @@ export default function GraphCanvas({
                 <DepthToggle mode={depth_mode} on_change={on_change_depth_mode} />
                 <ThemeToggle />
             </div>
+
+            {/* --- Filter panel + search --- */}
             <div className="graph-filter-stack" data-no-pan data-no-zoom>
                 <div
                     className="graph-filter-panel"
@@ -201,16 +298,11 @@ export default function GraphCanvas({
                                         on_toggle_filter(filter.id);
                                     }}
                                 >
-                                    <img
-                                        src={filter.icon_path}
-                                        alt={filter.label}
-                                        loading="lazy"
-                                    />
+                                    <img src={filter.icon_path} alt={filter.label} loading="lazy" />
                                 </button>
                             );
                         })}
                         <button
-                            key="misc"
                             type="button"
                             className={`graph-filter-button${misc_active ? " is-active" : ""}`}
                             aria-pressed={misc_active}
@@ -234,30 +326,26 @@ export default function GraphCanvas({
                             className="graph-filter-input"
                             data-no-pan
                             data-no-zoom
-                            onChange={(event) => {
-                                on_search_query_change(event.target.value);
-                            }}
-                            onClick={(event) => {
-                                event.stopPropagation();
-                            }}
+                            onChange={(event) => on_search_query_change(event.target.value)}
+                            onClick={(event) => event.stopPropagation()}
                         />
                     </div>
-                    {search_query.trim().length > 0 ? (
+                    {search_query.trim().length > 0 && (
                         <div className="graph-filter-results" data-no-pan data-no-zoom>
                             {search_matches.length === 0 ? (
                                 <div className="graph-filter-empty">No matches.</div>
                             ) : (
                                 search_matches.map((node) => (
-                                <button
-                                    key={node.id}
-                                    type="button"
-                                    className="graph-filter-result"
-                                    data-no-pan
-                                    onClick={(event) => {
-                                        event.stopPropagation();
-                                        on_focus_node(node.id);
-                                    }}
-                                >
+                                    <button
+                                        key={node.id}
+                                        type="button"
+                                        className="graph-filter-result"
+                                        data-no-pan
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            on_focus_node(node.id);
+                                        }}
+                                    >
                                         <span className="graph-filter-result-icon">
                                             <img
                                                 src={get_node_icon_path(node)}
@@ -273,9 +361,11 @@ export default function GraphCanvas({
                                 ))
                             )}
                         </div>
-                    ) : null}
+                    )}
                 </div>
             </div>
+
+            {/* --- Keyboard shortcut hints --- */}
             <div className="graph-shortcuts" data-no-pan data-no-zoom>
                 <span>
                     <span className="graph-shortcut-key" aria-hidden="true">⌫</span>
@@ -287,6 +377,8 @@ export default function GraphCanvas({
                     <span className="graph-shortcut-label">next</span>
                 </span>
             </div>
+
+            {/* --- Credit --- */}
             <div className="graph-credit" data-no-pan data-no-zoom>
                 <span>Developed by Taehoon Hwang.</span>
                 <br />
@@ -300,6 +392,8 @@ export default function GraphCanvas({
                 </a>
                 <span>.</span>
             </div>
+
+            {/* --- Pannable/zoomable canvas --- */}
             <div
                 className="graph-inner"
                 style={{
@@ -325,91 +419,29 @@ export default function GraphCanvas({
                             rx={24}
                         />
                     ))}
-                    {edges.map((edge) => {
-                        const is_highlighted = highlighted_edge_ids.has(edge.id);
-                        return (
-                            <g key={edge.id}>
-                                <path
-                                    className={`edge-line${is_highlighted ? " edge-highlight" : ""}`}
-                                    d={edge.path}
-                                />
-                            </g>
-                        );
-                    })}
+                    {edges.map((edge) => (
+                        <g key={edge.id}>
+                            <path
+                                className={`edge-line${highlighted_edge_ids.has(edge.id) ? " edge-highlight" : ""}`}
+                                d={edge.path}
+                            />
+                        </g>
+                    ))}
                 </svg>
                 <div className={`graph-nodes${related_node_ids.size > 0 ? " has-selection" : ""}`}>
-                    {nodes.map((node) => {
-                        const position = layout.positions[node.id];
-                        if (!position) {
-                            return null;
-                        }
-                        const science_icons = get_science_pack_icons(node);
-                        const science_count = science_icons.length;
-                        const science_overlap =
-                            science_count > 4
-                                ? (science_pack_size * science_count - science_row_width) /
-                                  Math.max(1, science_count - 1)
-                                : 0;
-                        const science_gap = science_count > 4 ? 0 : science_gap_default;
-                        const science_style =
-                            science_count > 0
-                                ? ({
-                                      "--science-gap": `${science_gap}px`,
-                                      "--science-overlap": `${science_overlap}px`,
-                                  } as CSSProperties)
-                                : undefined;
-                        const size = layout.sizes[node.id] ?? {
-                            width: node_width,
-                            height: get_node_height(node),
-                        };
-                        const is_selected = selected_node_id === node.id;
-                        const is_related = related_node_ids.has(node.id);
-                        const is_filtered_out = !filter_match_ids.has(node.id);
-                        const is_search_match = search_match_ids.has(node.id);
-                        return (
-                            <button
-                                key={node.id}
-                                type="button"
-                                data-no-pan
-                                className={`graph-node${science_icons.length > 0 ? " has-science" : ""}${is_selected ? " is-selected" : ""}${is_related ? " is-related" : ""}${is_search_match ? " is-search-match" : ""}${is_filtered_out ? " is-dimmed" : ""}${root_set.has(node.id) ? " is-root" : ""}${node.is_infinite ? " is-infinite" : ""}`}
-                                style={{
-                                    left: position.x,
-                                    top: position.y,
-                                    width: size.width,
-                                    height: size.height,
-                                }}
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    on_select_node(node.id);
-                                }}
-                            >
-                                <div className="graph-node-icon">
-                                    <img
-                                        src={get_node_icon_path(node)}
-                                        alt={format_title(node.title)}
-                                        loading="lazy"
-                                    />
-                                </div>
-                                <div className="graph-node-title">{format_title(node.title)}</div>
-                                {science_icons.length > 0 ? (
-                                    <div className="graph-node-science" style={science_style}>
-                                        {science_icons.map((pack) => (
-                                            <div
-                                                key={pack.internal_name}
-                                                className="graph-node-science-pack"
-                                            >
-                                                <img
-                                                    src={`/data/tech_images/${pack.internal_name}.png`}
-                                                    alt={pack.name}
-                                                    loading="lazy"
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : null}
-                            </button>
-                        );
-                    })}
+                    {nodes.map((node) => (
+                        <GraphNodeButton
+                            key={node.id}
+                            node={node}
+                            layout={layout}
+                            is_selected={selected_node_id === node.id}
+                            is_related={related_node_ids.has(node.id)}
+                            is_filtered_out={!filter_match_ids.has(node.id)}
+                            is_search_match={search_match_ids.has(node.id)}
+                            is_root={root_set.has(node.id)}
+                            on_select_node={on_select_node}
+                        />
+                    ))}
                 </div>
             </div>
         </div>
