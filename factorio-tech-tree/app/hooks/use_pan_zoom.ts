@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import type { Transform } from "../lib/tech-graph/types";
-import { max_zoom, min_zoom } from "../lib/tech-graph/constants";
+import { max_zoom, min_zoom, pan_boundary } from "../lib/tech-graph/constants";
 import { clamp } from "../lib/tech-graph/utils";
 
 type UsePanZoomOptions = {
@@ -34,6 +34,14 @@ type UsePanZoomResult = {
     on_pointer_up: (event: React.PointerEvent<HTMLDivElement>) => void;
 };
 
+function constrain_axis(position: number, content_size: number, viewport_size: number) {
+    const boundary = Math.min(pan_boundary, viewport_size * 0.2);
+    if (content_size <= viewport_size - boundary * 2) {
+        return (viewport_size - content_size) / 2;
+    }
+    return clamp(position, viewport_size - content_size - boundary, boundary);
+}
+
 /**
  * Manages all pan/zoom interaction state for the graph canvas.
  *
@@ -47,6 +55,7 @@ export function use_pan_zoom({
 }: UsePanZoomOptions): UsePanZoomResult {
     const viewport_ref = useRef<HTMLDivElement | null>(null);
     const transform_ref = useRef<Transform>({ x: 0, y: 0, scale: 1 });
+    const viewport_size_ref = useRef({ width: 0, height: 0 });
     const pointer_ref = useRef<{ x: number; y: number } | null>(null);
     const dragged_ref = useRef(false);
     const transform_frame_ref = useRef<number | null>(null);
@@ -69,21 +78,33 @@ export function use_pan_zoom({
         transform_frame_ref.current = null;
     }, []);
 
+    const constrain_transform = useCallback((transform: Transform) => {
+        const viewport = viewport_size_ref.current;
+        if (viewport.width === 0 || viewport.height === 0) return transform;
+        const layout = get_layout_size();
+        return {
+            ...transform,
+            x: constrain_axis(transform.x, layout.width * transform.scale, viewport.width),
+            y: constrain_axis(transform.y, layout.height * transform.scale, viewport.height),
+        };
+    }, [get_layout_size]);
+
     const write_transform = useCallback((transform: Transform) => {
-        transform_ref.current = transform;
+        const constrained = constrain_transform(transform);
+        transform_ref.current = constrained;
         if (!viewport_ref.current) return;
         viewport_ref.current.style.transform =
-            `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${transform.scale})`;
-    }, []);
+            `translate3d(${constrained.x}px, ${constrained.y}px, 0) scale(${constrained.scale})`;
+    }, [constrain_transform]);
 
     const schedule_transform = useCallback((transform: Transform) => {
-        transform_ref.current = transform;
+        transform_ref.current = constrain_transform(transform);
         if (transform_frame_ref.current !== null) return;
         transform_frame_ref.current = requestAnimationFrame(() => {
             transform_frame_ref.current = null;
             write_transform(transform_ref.current);
         });
-    }, [write_transform]);
+    }, [constrain_transform, write_transform]);
 
     const update_zoom = useCallback(
         (next_scale: number, anchor_x?: number, anchor_y?: number) => {
@@ -112,6 +133,7 @@ export function use_pan_zoom({
         if (!container) return;
         const { width, height } = container.getBoundingClientRect();
         if (width === 0 || height === 0) return;
+        viewport_size_ref.current = { width, height };
         const layout = get_layout_size();
         const scale = clamp(
             Math.min(width / layout.width, height / layout.height, 1),

@@ -40,17 +40,6 @@
     background-size: auto, auto, 64px 64px, 64px 64px, 16px 16px, 16px 16px, auto;
 }
 
-.graph-canvas::after {
-    position: absolute;
-    inset: 34px 0 0;
-    z-index: 0;
-    pointer-events: none;
-    content: "";
-    background:
-        linear-gradient(115deg, transparent 0 46%, rgba(0, 0, 0, 0.08) 46% 47%, transparent 47%),
-        radial-gradient(circle at 50% 20%, transparent 0 55%, rgba(0, 0, 0, 0.2) 100%);
-}
-
 .graph-canvas.is-panning {
     cursor: grabbing;
 }
