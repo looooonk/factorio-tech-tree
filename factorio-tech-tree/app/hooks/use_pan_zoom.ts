@@ -35,11 +35,9 @@ type UsePanZoomResult = {
 };
 
 function constrain_axis(position: number, content_size: number, viewport_size: number) {
-    const boundary = Math.min(pan_boundary, viewport_size * 0.2);
-    if (content_size <= viewport_size - boundary * 2) {
-        return (viewport_size - content_size) / 2;
-    }
-    return clamp(position, viewport_size - content_size - boundary, boundary);
+    const boundary = Math.min(pan_boundary, viewport_size * 0.4);
+    const opposite_edge = viewport_size - content_size - boundary;
+    return clamp(position, Math.min(boundary, opposite_edge), Math.max(boundary, opposite_edge));
 }
 
 /**

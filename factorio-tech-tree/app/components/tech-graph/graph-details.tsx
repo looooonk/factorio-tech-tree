@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { GraphNode } from "../../lib/tech-tree/types";
 import type { GraphSelection } from "../../lib/tech-graph/types";
 import { science_pack_name_map } from "../../lib/tech-graph/constants";
@@ -32,9 +33,12 @@ export default function GraphDetails({
             {selection.mode === "node" && selected_node && (
                 <div className="details-block">
                     <div className="details-selected-icon">
-                        <img
+                        <Image
                             src={get_node_icon_path(selected_node)}
                             alt={format_title(selected_node.title)}
+                            width={190}
+                            height={190}
+                            unoptimized
                             loading="lazy"
                             draggable={false}
                         />
@@ -96,9 +100,12 @@ export default function GraphDetails({
                                                 aria-label={`Open ${pack.name} research`}
                                                 title={`Open ${pack.name} research`}
                                             >
-                                                <img
+                                                <Image
                                                     src={`/data/tech_images/${internal_name}.png`}
                                                     alt={pack.name}
+                                                    width={43}
+                                                    height={43}
+                                                    unoptimized
                                                     loading="lazy"
                                                     draggable={false}
                                                 />
@@ -131,9 +138,12 @@ export default function GraphDetails({
                                         }}
                                     >
                                         <span className="details-link-icon">
-                                            <img
+                                            <Image
                                                 src={get_node_icon_path(node)}
                                                 alt={format_title(node.title)}
+                                                width={40}
+                                                height={40}
+                                                unoptimized
                                                 loading="lazy"
                                                 draggable={false}
                                             />
@@ -162,9 +172,12 @@ export default function GraphDetails({
                                         }}
                                     >
                                         <span className="details-link-icon">
-                                            <img
+                                            <Image
                                                 src={get_node_icon_path(node)}
                                                 alt={format_title(node.title)}
+                                                width={40}
+                                                height={40}
+                                                unoptimized
                                                 loading="lazy"
                                                 draggable={false}
                                             />

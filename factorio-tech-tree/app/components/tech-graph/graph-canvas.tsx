@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import type { CSSProperties, PointerEvent, RefObject } from "react";
+import Image from "next/image";
 import { FaTools } from "react-icons/fa";
 
 import DepthToggle from "../depth-toggle";
@@ -130,9 +131,12 @@ const GraphNodeButton = memo(function GraphNodeButton({
             }}
         >
             <div className="graph-node-icon">
-                <img
+                <Image
                     src={get_node_icon_path(node)}
                     alt={format_title(node.title)}
+                    width={168}
+                    height={168}
+                    unoptimized
                     loading="lazy"
                     decoding="async"
                     draggable={false}
@@ -143,9 +147,12 @@ const GraphNodeButton = memo(function GraphNodeButton({
                 <div className="graph-node-science" style={science_style}>
                     {science_icons.map((pack) => (
                         <div key={pack.internal_name} className="graph-node-science-pack">
-                            <img
+                            <Image
                                 src={`/data/tech_images/${pack.internal_name}.png`}
                                 alt={pack.name}
+                                width={56}
+                                height={56}
+                                unoptimized
                                 loading="lazy"
                                 decoding="async"
                                 draggable={false}
@@ -276,9 +283,12 @@ export default function GraphCanvas({
                                         on_toggle_filter(filter.id);
                                     }}
                                 >
-                                    <img
+                                    <Image
                                         src={filter.icon_path}
                                         alt={filter.label}
+                                        width={28}
+                                        height={28}
+                                        unoptimized
                                         loading="lazy"
                                         decoding="async"
                                         draggable={false}
@@ -332,9 +342,12 @@ export default function GraphCanvas({
                                         }}
                                     >
                                         <span className="graph-filter-result-icon">
-                                            <img
+                                            <Image
                                                 src={get_node_icon_path(node)}
                                                 alt={format_title(node.title)}
+                                                width={26}
+                                                height={26}
+                                                unoptimized
                                                 loading="lazy"
                                                 decoding="async"
                                                 draggable={false}
