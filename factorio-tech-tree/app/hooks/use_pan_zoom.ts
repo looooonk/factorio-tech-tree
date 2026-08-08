@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import type { Transform } from "../lib/tech-graph/types";
 import { max_zoom, min_zoom } from "../lib/tech-graph/constants";
@@ -19,11 +19,7 @@ type UsePanZoomOptions = {
 };
 
 type UsePanZoomResult = {
-    transform: Transform;
-    /** Mutable ref kept in sync with `transform`; safe to read in event handlers. */
-    transform_ref: React.RefObject<Transform>;
-    is_panning: boolean;
-    cancel_focus_animation: () => void;
+    viewport_ref: React.RefObject<HTMLDivElement | null>;
     update_zoom: (next_scale: number, anchor_x?: number, anchor_y?: number) => void;
     fit_to_view: () => void;
     on_zoom_in: () => void;
@@ -49,11 +45,11 @@ export function use_pan_zoom({
     get_layout_size,
     on_canvas_click,
 }: UsePanZoomOptions): UsePanZoomResult {
-    const [transform, set_transform] = useState<Transform>({ x: 0, y: 0, scale: 1 });
-    const [is_panning, set_is_panning] = useState(false);
-    const transform_ref = useRef<Transform>(transform);
+    const viewport_ref = useRef<HTMLDivElement | null>(null);
+    const transform_ref = useRef<Transform>({ x: 0, y: 0, scale: 1 });
     const pointer_ref = useRef<{ x: number; y: number } | null>(null);
     const dragged_ref = useRef(false);
+    const transform_frame_ref = useRef<number | null>(null);
     const focus_animation_ref = useRef<number | null>(null);
     // Stable ref so on_pointer_up doesn't need on_canvas_click in its dep array.
     const on_canvas_click_ref = useRef(on_canvas_click);
@@ -61,17 +57,33 @@ export function use_pan_zoom({
         on_canvas_click_ref.current = on_canvas_click;
     }, [on_canvas_click]);
 
-    // Keep transform_ref in sync so event handlers can read the latest value
-    // without capturing a stale closure.
-    useEffect(() => {
-        transform_ref.current = transform;
-    }, [transform]);
-
     const cancel_focus_animation = useCallback(() => {
         if (focus_animation_ref.current === null) return;
         cancelAnimationFrame(focus_animation_ref.current);
         focus_animation_ref.current = null;
     }, []);
+
+    const cancel_transform_frame = useCallback(() => {
+        if (transform_frame_ref.current === null) return;
+        cancelAnimationFrame(transform_frame_ref.current);
+        transform_frame_ref.current = null;
+    }, []);
+
+    const write_transform = useCallback((transform: Transform) => {
+        transform_ref.current = transform;
+        if (!viewport_ref.current) return;
+        viewport_ref.current.style.transform =
+            `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${transform.scale})`;
+    }, []);
+
+    const schedule_transform = useCallback((transform: Transform) => {
+        transform_ref.current = transform;
+        if (transform_frame_ref.current !== null) return;
+        transform_frame_ref.current = requestAnimationFrame(() => {
+            transform_frame_ref.current = null;
+            write_transform(transform_ref.current);
+        });
+    }, [write_transform]);
 
     const update_zoom = useCallback(
         (next_scale: number, anchor_x?: number, anchor_y?: number) => {
@@ -83,17 +95,16 @@ export function use_pan_zoom({
                 x: anchor_x ?? rect.width / 2,
                 y: anchor_y ?? rect.height / 2,
             };
-            set_transform((current) => {
-                const scale = clamp(next_scale, min_zoom, max_zoom);
-                const ratio = scale / current.scale;
-                return {
-                    scale,
-                    x: anchor.x - (anchor.x - current.x) * ratio,
-                    y: anchor.y - (anchor.y - current.y) * ratio,
-                };
+            const current = transform_ref.current;
+            const scale = clamp(next_scale, min_zoom, max_zoom);
+            const ratio = scale / current.scale;
+            schedule_transform({
+                scale,
+                x: anchor.x - (anchor.x - current.x) * ratio,
+                y: anchor.y - (anchor.y - current.y) * ratio,
             });
         },
-        [cancel_focus_animation, container_ref],
+        [cancel_focus_animation, container_ref, schedule_transform],
     );
 
     const fit_to_view = useCallback(() => {
@@ -110,10 +121,17 @@ export function use_pan_zoom({
         const x = (width - layout.width * scale) / 2;
         const y = (height - layout.height * scale) / 2;
         cancel_focus_animation();
-        set_transform({ x, y, scale });
-    }, [cancel_focus_animation, container_ref, get_layout_size]);
+        cancel_transform_frame();
+        write_transform({ x, y, scale });
+    }, [
+        cancel_focus_animation,
+        cancel_transform_frame,
+        container_ref,
+        get_layout_size,
+        write_transform,
+    ]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         fit_to_view();
         window.addEventListener("resize", fit_to_view);
         return () => window.removeEventListener("resize", fit_to_view);
@@ -129,6 +147,7 @@ export function use_pan_zoom({
             const target_x = width / 2 - center_x * start.scale;
             const target_y = height / 2 - center_y * start.scale;
             cancel_focus_animation();
+            cancel_transform_frame();
             const duration_ms = 440;
             const start_time = performance.now();
             const animate = (now: number) => {
@@ -136,7 +155,7 @@ export function use_pan_zoom({
                 const progress = Math.min(1, elapsed / duration_ms);
                 // Cubic ease-out: snappy start, smooth deceleration into the target.
                 const eased = 1 - Math.pow(1 - progress, 3);
-                set_transform({
+                write_transform({
                     scale: start.scale,
                     x: start.x + (target_x - start.x) * eased,
                     y: start.y + (target_y - start.y) * eased,
@@ -149,7 +168,7 @@ export function use_pan_zoom({
             };
             focus_animation_ref.current = requestAnimationFrame(animate);
         },
-        [cancel_focus_animation, container_ref],
+        [cancel_focus_animation, cancel_transform_frame, container_ref, write_transform],
     );
 
     const on_wheel = useCallback(
@@ -193,9 +212,9 @@ export function use_pan_zoom({
             if (target.closest("[data-no-pan]")) return;
             cancel_focus_animation();
             event.currentTarget.setPointerCapture(event.pointerId);
+            event.currentTarget.classList.add("is-panning");
             pointer_ref.current = { x: event.clientX, y: event.clientY };
             dragged_ref.current = false;
-            set_is_panning(true);
         },
         [cancel_focus_animation],
     );
@@ -209,28 +228,33 @@ export function use_pan_zoom({
                 dragged_ref.current = true;
             }
             pointer_ref.current = { x: event.clientX, y: event.clientY };
-            set_transform((current) => ({ ...current, x: current.x + dx, y: current.y + dy }));
+            const current = transform_ref.current;
+            schedule_transform({ ...current, x: current.x + dx, y: current.y + dy });
         },
-        [],
+        [schedule_transform],
     );
 
     const on_pointer_up = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
         if (!pointer_ref.current) return;
         event.currentTarget.releasePointerCapture(event.pointerId);
+        event.currentTarget.classList.remove("is-panning");
         const was_dragging = dragged_ref.current;
         pointer_ref.current = null;
         dragged_ref.current = false;
-        set_is_panning(false);
         if (!was_dragging) {
             on_canvas_click_ref.current?.();
         }
     }, []);
 
+    useEffect(() => {
+        return () => {
+            cancel_transform_frame();
+            cancel_focus_animation();
+        };
+    }, [cancel_focus_animation, cancel_transform_frame]);
+
     return {
-        transform,
-        transform_ref,
-        is_panning,
-        cancel_focus_animation,
+        viewport_ref,
         update_zoom,
         fit_to_view,
         on_zoom_in,

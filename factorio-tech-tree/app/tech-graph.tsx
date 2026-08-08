@@ -93,8 +93,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     } = use_filter_state(all_filter_ids);
 
     const {
-        transform,
-        is_panning,
+        viewport_ref,
         fit_to_view,
         on_zoom_in,
         on_zoom_out,
@@ -334,9 +333,8 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         <section className="graph-shell">
             <GraphCanvas
                 container_ref={container_ref}
-                is_panning={is_panning}
+                viewport_ref={viewport_ref}
                 layout={layout}
-                transform={transform}
                 edges={edges_with_paths}
                 nodes={nodes}
                 root_set={root_set}

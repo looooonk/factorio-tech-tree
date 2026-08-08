@@ -53,6 +53,10 @@
     cursor: grabbing;
 }
 
+.graph-canvas.is-panning .graph-inner {
+    will-change: transform;
+}
+
 .graph-titlebar {
     position: absolute;
     inset: 0 0 auto;
@@ -474,6 +478,7 @@
     top: 0;
     left: 0;
     z-index: 1;
+    backface-visibility: hidden;
     transform-origin: 0 0;
 }
 
@@ -501,7 +506,6 @@
     stroke: var(--edge-strong);
     stroke-width: 4;
     opacity: 1;
-    filter: drop-shadow(0 0 3px rgba(255, 172, 54, 0.7));
 }
 
 .group-column-bg {
@@ -533,12 +537,13 @@
     box-shadow:
         inset 0 0 0 2px #5d5951,
         inset 0 -8px 18px rgba(0, 0, 0, 0.28),
-        0 5px 0 #111,
-        0 8px 12px rgba(0, 0, 0, 0.38);
+        0 5px 0 #111;
     color: var(--ink);
+    contain-intrinsic-size: 300px 460px;
+    content-visibility: auto;
     cursor: pointer;
     text-align: center;
-    transition: 90ms border-color, 90ms filter, 90ms opacity, 90ms box-shadow;
+    transition: 90ms border-color, 90ms opacity, 90ms box-shadow;
 }
 
 .graph-node.has-science::after {
@@ -556,7 +561,6 @@
 
 .graph-node:hover {
     border-color: var(--accent-soft);
-    filter: brightness(1.15);
     box-shadow:
         inset 0 0 0 2px #6c665b,
         inset 0 -8px 18px rgba(0, 0, 0, 0.25),
@@ -589,7 +593,6 @@
 .graph-node.is-dimmed,
 .graph-nodes.has-selection .graph-node:not(.is-related):not(.is-selected) {
     opacity: 0.28;
-    filter: grayscale(0.65) saturate(0.45);
 }
 
 .graph-node.is-root {
@@ -619,8 +622,7 @@
         linear-gradient(145deg, #4d4235, #302c26);
     box-shadow:
         inset 0 0 0 2px #704719,
-        0 5px 0 #17100a,
-        0 8px 12px rgba(0, 0, 0, 0.38);
+        0 5px 0 #17100a;
 }
 
 .graph-node-icon,
@@ -646,7 +648,6 @@
     width: 168px;
     height: 168px;
     object-fit: contain;
-    filter: drop-shadow(0 5px 3px rgba(0, 0, 0, 0.48));
 }
 
 .graph-node-title {
@@ -690,7 +691,6 @@
     width: 56px;
     height: 56px;
     object-fit: contain;
-    filter: drop-shadow(0 2px 2px #000);
 }
 
 .graph-details {

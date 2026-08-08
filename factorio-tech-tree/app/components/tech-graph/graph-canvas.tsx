@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import type { CSSProperties, PointerEvent, RefObject } from "react";
 import { FaTools } from "react-icons/fa";
 
@@ -6,7 +7,7 @@ import DepthToggle from "../depth-toggle";
 import type { DepthMode } from "../depth-toggle";
 import type { GraphNode } from "../../lib/tech-tree/types";
 import type { Layout } from "../../lib/tech-graph/graph-layout";
-import type { GraphEdgePath, Transform } from "../../lib/tech-graph/types";
+import type { GraphEdgePath } from "../../lib/tech-graph/types";
 import { node_width, science_pack_size, science_pack_gap } from "../../lib/tech-graph/constants";
 import {
     format_title,
@@ -19,9 +20,8 @@ import {
 
 type GraphCanvasProps = {
     container_ref: RefObject<HTMLDivElement | null>;
-    is_panning: boolean;
+    viewport_ref: RefObject<HTMLDivElement | null>;
     layout: Layout;
-    transform: Transform;
     edges: GraphEdgePath[];
     nodes: GraphNode[];
     root_set: Set<string>;
@@ -74,7 +74,7 @@ type GraphNodeButtonProps = {
 const science_row_max_width = 4 * science_pack_size + 3 * science_pack_gap;
 
 /** Renders a single tech-tree node button with its icon, title, and science pack row. */
-function GraphNodeButton({
+const GraphNodeButton = memo(function GraphNodeButton({
     node,
     layout,
     is_selected,
@@ -131,7 +131,12 @@ function GraphNodeButton({
             }}
         >
             <div className="graph-node-icon">
-                <img src={get_node_icon_path(node)} alt={format_title(node.title)} loading="lazy" />
+                <img
+                    src={get_node_icon_path(node)}
+                    alt={format_title(node.title)}
+                    loading="lazy"
+                    decoding="async"
+                />
             </div>
             <div className="graph-node-title">{format_title(node.title)}</div>
             {science_icons.length > 0 && (
@@ -142,6 +147,7 @@ function GraphNodeButton({
                                 src={`/data/tech_images/${pack.internal_name}.png`}
                                 alt={pack.name}
                                 loading="lazy"
+                                decoding="async"
                             />
                         </div>
                     ))}
@@ -149,15 +155,14 @@ function GraphNodeButton({
             )}
         </button>
     );
-}
+});
 
 // --- Main component ---
 
 export default function GraphCanvas({
     container_ref,
-    is_panning,
+    viewport_ref,
     layout,
-    transform,
     edges,
     nodes,
     root_set,
@@ -186,11 +191,19 @@ export default function GraphCanvas({
     on_change_depth_mode,
 }: GraphCanvasProps) {
     const misc_active = active_filters.has("misc");
+    const edge_path = useMemo(() => edges.map((edge) => edge.path).join(" "), [edges]);
+    const highlighted_path = useMemo(
+        () => edges
+            .filter((edge) => highlighted_edge_ids.has(edge.id))
+            .map((edge) => edge.path)
+            .join(" "),
+        [edges, highlighted_edge_ids],
+    );
 
     return (
         <div
             ref={container_ref}
-            className={`graph-canvas${is_panning ? " is-panning" : ""}`}
+            className="graph-canvas"
             onPointerDown={on_pointer_down}
             onPointerMove={on_pointer_move}
             onPointerUp={on_pointer_up}
@@ -224,11 +237,7 @@ export default function GraphCanvas({
             </div>
 
             <div className="graph-filter-stack" data-no-pan data-no-zoom>
-                <div
-                    className="graph-filter-panel"
-                    data-no-pan
-                    data-no-zoom
-                >
+                <div className="graph-filter-panel" data-no-pan data-no-zoom>
                     <div className="graph-panel-heading">
                         <div className="graph-panel-title">Research filters</div>
                         <div className="graph-filter-actions">
@@ -270,7 +279,12 @@ export default function GraphCanvas({
                                         on_toggle_filter(filter.id);
                                     }}
                                 >
-                                    <img src={filter.icon_path} alt={filter.label} loading="lazy" />
+                                    <img
+                                        src={filter.icon_path}
+                                        alt={filter.label}
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
                                 </button>
                             );
                         })}
@@ -324,6 +338,7 @@ export default function GraphCanvas({
                                                 src={get_node_icon_path(node)}
                                                 alt={format_title(node.title)}
                                                 loading="lazy"
+                                                decoding="async"
                                             />
                                         </span>
                                         <span className="graph-filter-result-text">
@@ -365,11 +380,11 @@ export default function GraphCanvas({
             </div>
 
             <div
+                ref={viewport_ref}
                 className="graph-inner"
                 style={{
                     width: layout.width,
                     height: layout.height,
-                    transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                 }}
             >
                 <svg
@@ -389,14 +404,10 @@ export default function GraphCanvas({
                             rx={24}
                         />
                     ))}
-                    {edges.map((edge) => (
-                        <g key={edge.id}>
-                            <path
-                                className={`edge-line${highlighted_edge_ids.has(edge.id) ? " edge-highlight" : ""}`}
-                                d={edge.path}
-                            />
-                        </g>
-                    ))}
+                    <path className="edge-line" d={edge_path} />
+                    {highlighted_path && (
+                        <path className="edge-line edge-highlight" d={highlighted_path} />
+                    )}
                 </svg>
                 <div className={`graph-nodes${related_node_ids.size > 0 ? " has-selection" : ""}`}>
                     {nodes.map((node) => (
