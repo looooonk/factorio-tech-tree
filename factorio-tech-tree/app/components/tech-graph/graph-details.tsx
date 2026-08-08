@@ -22,7 +22,7 @@ export default function GraphDetails({
     on_focus_node,
 }: GraphDetailsProps) {
     return (
-        <aside className="graph-details" data-no-zoom>
+        <aside className="graph-details" data-no-pan data-no-zoom>
             <div className="details-title">Technology details</div>
             {selection.mode === "none" && (
                 <div className="details-empty">
@@ -36,6 +36,7 @@ export default function GraphDetails({
                             src={get_node_icon_path(selected_node)}
                             alt={format_title(selected_node.title)}
                             loading="lazy"
+                            draggable={false}
                         />
                     </div>
                     <div className="details-node">
@@ -56,7 +57,6 @@ export default function GraphDetails({
                                 </a>
                             ) : null}
                         </div>
-                        <div className="details-node-meta">{selected_node.id}</div>
                     </div>
                     <div className="details-section">
                         <div className="details-section-title">Requirements</div>
@@ -100,6 +100,7 @@ export default function GraphDetails({
                                                     src={`/data/tech_images/${internal_name}.png`}
                                                     alt={pack.name}
                                                     loading="lazy"
+                                                    draggable={false}
                                                 />
                                             </button>
                                         );
@@ -134,6 +135,7 @@ export default function GraphDetails({
                                                 src={get_node_icon_path(node)}
                                                 alt={format_title(node.title)}
                                                 loading="lazy"
+                                                draggable={false}
                                             />
                                         </span>
                                         <span className="details-link-text">
@@ -164,6 +166,7 @@ export default function GraphDetails({
                                                 src={get_node_icon_path(node)}
                                                 alt={format_title(node.title)}
                                                 loading="lazy"
+                                                draggable={false}
                                             />
                                         </span>
                                         <span className="details-link-text">

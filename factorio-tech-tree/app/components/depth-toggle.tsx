@@ -23,7 +23,7 @@ type DepthToggleProps = {
 export default function DepthToggle({ mode, on_change }: DepthToggleProps) {
     return (
         <div
-            className="graph-theme-toggle"
+            className="graph-depth-toggle"
             role="group"
             aria-label={`Highlight depth: ${mode}`}
             data-no-pan
@@ -35,7 +35,7 @@ export default function DepthToggle({ mode, on_change }: DepthToggleProps) {
                     <button
                         key={option.id}
                         type="button"
-                        className={`graph-theme-option${is_active ? " is-active" : ""}`}
+                        className={`graph-depth-option${is_active ? " is-active" : ""}`}
                         aria-pressed={is_active}
                         aria-label={option.label}
                         title={option.label}

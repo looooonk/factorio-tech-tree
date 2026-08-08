@@ -2,7 +2,6 @@ import { memo, useMemo } from "react";
 import type { CSSProperties, PointerEvent, RefObject } from "react";
 import { FaTools } from "react-icons/fa";
 
-import ThemeToggle from "../theme-toggle";
 import DepthToggle from "../depth-toggle";
 import type { DepthMode } from "../depth-toggle";
 import type { GraphNode } from "../../lib/tech-tree/types";
@@ -136,6 +135,7 @@ const GraphNodeButton = memo(function GraphNodeButton({
                     alt={format_title(node.title)}
                     loading="lazy"
                     decoding="async"
+                    draggable={false}
                 />
             </div>
             <div className="graph-node-title">{format_title(node.title)}</div>
@@ -148,6 +148,7 @@ const GraphNodeButton = memo(function GraphNodeButton({
                                 alt={pack.name}
                                 loading="lazy"
                                 decoding="async"
+                                draggable={false}
                             />
                         </div>
                     ))}
@@ -212,9 +213,8 @@ export default function GraphCanvas({
             <div className="graph-titlebar" data-no-pan data-no-zoom>
                 <div className="graph-titlebar-name">
                     <span className="graph-titlebar-light" aria-hidden />
-                    Technology tree
+                    Factorio Technology Tree
                 </div>
-                <div className="graph-titlebar-meta">{nodes.length} technologies loaded</div>
             </div>
 
             <div className="graph-toolbar-group" data-no-pan data-no-zoom>
@@ -230,10 +230,7 @@ export default function GraphCanvas({
                         Reset
                     </button>
                 </div>
-                <div className="graph-toolbar-toggles">
-                    <DepthToggle mode={depth_mode} on_change={on_change_depth_mode} />
-                    <ThemeToggle />
-                </div>
+                <DepthToggle mode={depth_mode} on_change={on_change_depth_mode} />
             </div>
 
             <div className="graph-filter-stack" data-no-pan data-no-zoom>
@@ -284,6 +281,7 @@ export default function GraphCanvas({
                                         alt={filter.label}
                                         loading="lazy"
                                         decoding="async"
+                                        draggable={false}
                                     />
                                 </button>
                             );
@@ -339,6 +337,7 @@ export default function GraphCanvas({
                                                 alt={format_title(node.title)}
                                                 loading="lazy"
                                                 decoding="async"
+                                                draggable={false}
                                             />
                                         </span>
                                         <span className="graph-filter-result-text">

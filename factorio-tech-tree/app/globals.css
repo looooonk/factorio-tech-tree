@@ -1,75 +1,25 @@
 @import "tailwindcss";
 
 :root {
-    --bg: #2e2d2a;
-    --surface: #42403c;
-    --surface-strong: #4b4842;
-    --surface-inset: #242321;
+    --bg: #20201e;
+    --surface: #343330;
+    --surface-strong: #3d3b37;
+    --surface-inset: #191918;
     --ink: #f2e7ca;
     --ink-soft: #d0c4a8;
     --muted: #9d9584;
     --line: #151513;
-    --line-light: #69645b;
+    --line-light: #57534c;
     --accent: #d9821b;
     --accent-bright: #ffc45d;
     --accent-soft: #a96012;
     --edge-muted: #6c675c;
     --edge-strong: #ffc45d;
-    --panel: #353431;
-    --canvas-base: #25231f;
-    --canvas-grid: rgba(180, 164, 126, 0.08);
-    --canvas-grime: rgba(117, 74, 31, 0.2);
-    color-scheme: dark;
-}
-
-:root[data-theme="light"],
-body[data-theme="light"] {
-    --bg: #45423d;
-    --surface: #5a554d;
-    --surface-strong: #666057;
-    --surface-inset: #32302c;
-    --ink: #fff3d4;
-    --ink-soft: #ded2b7;
-    --muted: #b7ad99;
-    --line: #1e1d1a;
-    --line-light: #827a6e;
-    --edge-muted: #827b6c;
-    --panel: #4c4943;
-    --canvas-base: #37342e;
-    --canvas-grid: rgba(217, 196, 151, 0.09);
-    --canvas-grime: rgba(130, 78, 28, 0.18);
-    color-scheme: dark;
-}
-
-:root[data-theme="dark"],
-body[data-theme="dark"] {
-    --bg: #20201e;
-    --surface: #343330;
-    --surface-strong: #3d3b37;
-    --surface-inset: #191918;
-    --line-light: #57534c;
     --panel: #292927;
     --canvas-base: #1d1c19;
     --canvas-grid: rgba(180, 164, 126, 0.06);
     --canvas-grime: rgba(95, 58, 24, 0.16);
     color-scheme: dark;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme]),
-    :root[data-theme="system"],
-    body[data-theme="system"] {
-        --bg: #20201e;
-        --surface: #343330;
-        --surface-strong: #3d3b37;
-        --surface-inset: #191918;
-        --line-light: #57534c;
-        --panel: #292927;
-        --canvas-base: #1d1c19;
-        --canvas-grid: rgba(180, 164, 126, 0.06);
-        --canvas-grime: rgba(95, 58, 24, 0.16);
-        color-scheme: dark;
-    }
 }
 
 @theme inline {

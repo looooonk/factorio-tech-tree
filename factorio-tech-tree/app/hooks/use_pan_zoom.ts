@@ -210,6 +210,7 @@ export function use_pan_zoom({
             if (event.button !== 0) return;
             const target = event.target as HTMLElement;
             if (target.closest("[data-no-pan]")) return;
+            event.preventDefault();
             cancel_focus_animation();
             event.currentTarget.setPointerCapture(event.pointerId);
             event.currentTarget.classList.add("is-panning");
