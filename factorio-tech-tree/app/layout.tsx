@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { IBM_Plex_Mono, Titillium_Web } from "next/font/google";
 import "./globals.css";
 import "./graph.css";
 
-const spaceGrotesk = Space_Grotesk({
-    variable: "--font-space-grotesk",
+const factorioFont = Titillium_Web({
+    variable: "--font-factorio",
     subsets: ["latin"],
+    weight: ["400", "600", "700"],
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -27,7 +28,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body
-                className={`${spaceGrotesk.variable} ${ibmPlexMono.variable} antialiased`}
+                className={`${factorioFont.variable} ${ibmPlexMono.variable} antialiased`}
             >
                 {children}
             </body>

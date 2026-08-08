@@ -1,4 +1,3 @@
-import { useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent, RefObject } from "react";
 import { FaTools } from "react-icons/fa";
 
@@ -70,7 +69,7 @@ type GraphNodeButtonProps = {
 
 /**
  * The maximum number of science packs that fit at full size before we need to
- * compress them via negative-margin overlap. 4 packs × 56px + 3 gaps × 6px = 242px.
+ * compress them via negative-margin overlap. 4 packs x 56px + 3 gaps x 6px = 242px.
  */
 const science_row_max_width = 4 * science_pack_size + 3 * science_pack_gap;
 
@@ -186,39 +185,7 @@ export default function GraphCanvas({
     depth_mode,
     on_change_depth_mode,
 }: GraphCanvasProps) {
-    const toolbar_ref = useRef<HTMLDivElement | null>(null);
-    const filter_ref = useRef<HTMLDivElement | null>(null);
-    const [controls_width, set_controls_width] = useState<number | null>(null);
     const misc_active = active_filters.has("misc");
-
-    // Synchronize the width of the toolbar and filter panel so they stay the
-    // same width as either one grows. A ResizeObserver fires whenever either
-    // element changes size (e.g. on first paint or dynamic content changes).
-    useLayoutEffect(() => {
-        const toolbar = toolbar_ref.current;
-        const filter = filter_ref.current;
-        if (!toolbar || !filter) return;
-
-        const update_width = () => {
-            const next_width = Math.max(
-                toolbar.getBoundingClientRect().width,
-                filter.getBoundingClientRect().width,
-            );
-            set_controls_width((current) => {
-                // Avoid triggering re-renders for sub-pixel fluctuations.
-                if (current !== null && Math.abs(current - next_width) < 0.5) return current;
-                return next_width;
-            });
-        };
-
-        update_width();
-        const observer = new ResizeObserver(update_width);
-        observer.observe(toolbar);
-        observer.observe(filter);
-        return () => observer.disconnect();
-    }, []);
-
-    const control_style = controls_width ? { width: `${controls_width}px` } : undefined;
 
     return (
         <div
@@ -229,14 +196,17 @@ export default function GraphCanvas({
             onPointerUp={on_pointer_up}
             onPointerCancel={on_pointer_up}
         >
-            {/* --- Toolbar (zoom controls + toggles) --- */}
-            <div className="graph-toolbar-group" data-no-pan>
-                <div
-                    className="graph-toolbar"
-                    data-no-pan
-                    ref={toolbar_ref}
-                    style={control_style}
-                >
+            <div className="graph-titlebar" data-no-pan data-no-zoom>
+                <div className="graph-titlebar-name">
+                    <span className="graph-titlebar-light" aria-hidden />
+                    Technology tree
+                </div>
+                <div className="graph-titlebar-meta">{nodes.length} technologies loaded</div>
+            </div>
+
+            <div className="graph-toolbar-group" data-no-pan data-no-zoom>
+                <div className="graph-panel-title">View controls</div>
+                <div className="graph-toolbar" data-no-pan>
                     <button type="button" onClick={on_zoom_in}>
                         Zoom in
                     </button>
@@ -247,40 +217,42 @@ export default function GraphCanvas({
                         Reset
                     </button>
                 </div>
-                <DepthToggle mode={depth_mode} on_change={on_change_depth_mode} />
-                <ThemeToggle />
+                <div className="graph-toolbar-toggles">
+                    <DepthToggle mode={depth_mode} on_change={on_change_depth_mode} />
+                    <ThemeToggle />
+                </div>
             </div>
 
-            {/* --- Filter panel + search --- */}
             <div className="graph-filter-stack" data-no-pan data-no-zoom>
                 <div
                     className="graph-filter-panel"
                     data-no-pan
                     data-no-zoom
-                    ref={filter_ref}
-                    style={control_style}
                 >
-                    <div className="graph-filter-actions">
-                        <button
-                            type="button"
-                            className="graph-filter-action"
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                on_select_all_filters();
-                            }}
-                        >
-                            Select all
-                        </button>
-                        <button
-                            type="button"
-                            className="graph-filter-action"
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                on_deselect_all_filters();
-                            }}
-                        >
-                            Deselect all
-                        </button>
+                    <div className="graph-panel-heading">
+                        <div className="graph-panel-title">Research filters</div>
+                        <div className="graph-filter-actions">
+                            <button
+                                type="button"
+                                className="graph-filter-action"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    on_select_all_filters();
+                                }}
+                            >
+                                All
+                            </button>
+                            <button
+                                type="button"
+                                className="graph-filter-action"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    on_deselect_all_filters();
+                                }}
+                            >
+                                None
+                            </button>
+                        </div>
                     </div>
                     <div className="graph-filter-grid">
                         {science_filters.map((filter) => {
@@ -317,7 +289,8 @@ export default function GraphCanvas({
                         </button>
                     </div>
                 </div>
-                <div className="graph-search-panel" data-no-pan data-no-zoom style={control_style}>
+                <div className="graph-search-panel" data-no-pan data-no-zoom>
+                    <div className="graph-panel-title">Find technology</div>
                     <div className="graph-filter-search">
                         <input
                             type="search"
@@ -365,7 +338,6 @@ export default function GraphCanvas({
                 </div>
             </div>
 
-            {/* --- Keyboard shortcut hints --- */}
             <div className="graph-shortcuts" data-no-pan data-no-zoom>
                 <span>
                     <span className="graph-shortcut-key" aria-hidden="true">⌫</span>
@@ -378,11 +350,10 @@ export default function GraphCanvas({
                 </span>
             </div>
 
-            {/* --- Credit --- */}
             <div className="graph-credit" data-no-pan data-no-zoom>
-                <span>Developed by Taehoon Hwang.</span>
+                <span>Community tool by Taehoon Hwang.</span>
                 <br />
-                <span>Aid development on </span>
+                <span>Contribute on </span>
                 <a
                     href="https://github.com/looooonk/factorio-tech-tree"
                     target="_blank"
@@ -393,7 +364,6 @@ export default function GraphCanvas({
                 <span>.</span>
             </div>
 
-            {/* --- Pannable/zoomable canvas --- */}
             <div
                 className="graph-inner"
                 style={{

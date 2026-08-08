@@ -1,57 +1,57 @@
 @import "tailwindcss";
 
-/* Theme tokens */
 :root {
-    --bg: #eef1f4;
-    --surface: #f8fafc;
-    --surface-strong: #ffffff;
-    --ink: #0b0d10;
-    --ink-soft: #39424c;
-    --muted: #707a86;
-    --line: #d8dee5;
-    --accent: #1d6f7a;
-    --accent-soft: #5ab1b9;
-    --edge: #a5b2bf;
-    --edge-muted: #c8d2dc;
-    --edge-strong: #1d6f7a;
-    --panel: #f1f4f7;
-    --body-glow-1: #ffffff;
-    --body-glow-2: #f1f4f6;
-    --body-glow-3: #e8edf1;
-    --canvas-glow-1: rgba(90, 177, 185, 0.15);
-    --canvas-glow-2: rgba(29, 111, 122, 0.12);
-    --canvas-base-1: #f8fafc;
-    --canvas-base-2: #edf2f6;
-    color-scheme: light dark;
+    --bg: #2e2d2a;
+    --surface: #42403c;
+    --surface-strong: #4b4842;
+    --surface-inset: #242321;
+    --ink: #f2e7ca;
+    --ink-soft: #d0c4a8;
+    --muted: #9d9584;
+    --line: #151513;
+    --line-light: #69645b;
+    --accent: #d9821b;
+    --accent-bright: #ffc45d;
+    --accent-soft: #a96012;
+    --edge-muted: #6c675c;
+    --edge-strong: #ffc45d;
+    --panel: #353431;
+    --canvas-base: #25231f;
+    --canvas-grid: rgba(180, 164, 126, 0.08);
+    --canvas-grime: rgba(117, 74, 31, 0.2);
+    color-scheme: dark;
 }
 
 :root[data-theme="light"],
 body[data-theme="light"] {
-    color-scheme: light;
+    --bg: #45423d;
+    --surface: #5a554d;
+    --surface-strong: #666057;
+    --surface-inset: #32302c;
+    --ink: #fff3d4;
+    --ink-soft: #ded2b7;
+    --muted: #b7ad99;
+    --line: #1e1d1a;
+    --line-light: #827a6e;
+    --edge-muted: #827b6c;
+    --panel: #4c4943;
+    --canvas-base: #37342e;
+    --canvas-grid: rgba(217, 196, 151, 0.09);
+    --canvas-grime: rgba(130, 78, 28, 0.18);
+    color-scheme: dark;
 }
 
 :root[data-theme="dark"],
 body[data-theme="dark"] {
-    --bg: #0b0f14;
-    --surface: #121922;
-    --surface-strong: #16202a;
-    --ink: #eef3f8;
-    --ink-soft: #c2ccd6;
-    --muted: #8794a3;
-    --line: #243040;
-    --accent: #67c6cf;
-    --accent-soft: #4ea3ad;
-    --edge: #3b4b5d;
-    --edge-muted: #2b3644;
-    --edge-strong: #67c6cf;
-    --panel: #0f141b;
-    --body-glow-1: #18212b;
-    --body-glow-2: #111821;
-    --body-glow-3: #0b0f14;
-    --canvas-glow-1: rgba(103, 198, 207, 0.2);
-    --canvas-glow-2: rgba(29, 111, 122, 0.3);
-    --canvas-base-1: #121922;
-    --canvas-base-2: #0f151c;
+    --bg: #20201e;
+    --surface: #343330;
+    --surface-strong: #3d3b37;
+    --surface-inset: #191918;
+    --line-light: #57534c;
+    --panel: #292927;
+    --canvas-base: #1d1c19;
+    --canvas-grid: rgba(180, 164, 126, 0.06);
+    --canvas-grime: rgba(95, 58, 24, 0.16);
     color-scheme: dark;
 }
 
@@ -59,26 +59,15 @@ body[data-theme="dark"] {
     :root:not([data-theme]),
     :root[data-theme="system"],
     body[data-theme="system"] {
-        --bg: #0b0f14;
-        --surface: #121922;
-        --surface-strong: #16202a;
-        --ink: #eef3f8;
-        --ink-soft: #c2ccd6;
-        --muted: #8794a3;
-        --line: #243040;
-        --accent: #67c6cf;
-        --accent-soft: #4ea3ad;
-        --edge: #3b4b5d;
-        --edge-muted: #2b3644;
-        --edge-strong: #67c6cf;
-        --panel: #0f141b;
-        --body-glow-1: #18212b;
-        --body-glow-2: #111821;
-        --body-glow-3: #0b0f14;
-        --canvas-glow-1: rgba(103, 198, 207, 0.2);
-        --canvas-glow-2: rgba(29, 111, 122, 0.3);
-        --canvas-base-1: #121922;
-        --canvas-base-2: #0f151c;
+        --bg: #20201e;
+        --surface: #343330;
+        --surface-strong: #3d3b37;
+        --surface-inset: #191918;
+        --line-light: #57534c;
+        --panel: #292927;
+        --canvas-base: #1d1c19;
+        --canvas-grid: rgba(180, 164, 126, 0.06);
+        --canvas-grime: rgba(95, 58, 24, 0.16);
         color-scheme: dark;
     }
 }
@@ -86,11 +75,10 @@ body[data-theme="dark"] {
 @theme inline {
     --color-background: var(--bg);
     --color-foreground: var(--ink);
-    --font-sans: var(--font-space-grotesk);
+    --font-sans: var(--font-factorio);
     --font-mono: var(--font-plex-mono);
 }
 
-/* Base reset */
 *,
 *::before,
 *::after {
@@ -104,14 +92,22 @@ body {
 }
 
 body {
-    background: radial-gradient(1200px 600px at 10% -10%,
-            var(--body-glow-1) 0%,
-            var(--body-glow-2) 40%,
-            var(--body-glow-3) 100%),
-        var(--bg);
+    background: var(--bg);
     color: var(--ink);
-    font-family: var(--font-space-grotesk), "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-factorio), "Arial Narrow", Arial, sans-serif;
     margin: 0;
     min-height: 100vh;
     overscroll-behavior: none;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+    outline: 2px solid var(--accent-bright);
+    outline-offset: 2px;
 }

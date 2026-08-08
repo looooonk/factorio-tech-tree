@@ -23,10 +23,10 @@ export default function GraphDetails({
 }: GraphDetailsProps) {
     return (
         <aside className="graph-details" data-no-zoom>
-            <div className="details-title">Selection</div>
+            <div className="details-title">Technology details</div>
             {selection.mode === "none" && (
                 <div className="details-empty">
-                    Click a node to see its incoming and outgoing connections.
+                    Select a technology to inspect its research cost and connections.
                 </div>
             )}
             {selection.mode === "node" && selected_node && (
