@@ -145,6 +145,19 @@ Node clicks select without panning; details and search links select and center t
 A science node matches filters only when all required packs are active.
 Non-science nodes are controlled by the `misc` filter.
 
+## Visual Design
+
+The app should feel native to Factorio's interface: functional, industrial,
+compact, and focused on the technology graph.
+
+- Use the fixed dark graphite palette, warm orange highlights, hard-edged frames,
+  inset controls, and restrained texture established in `globals.css` and `graph.css`.
+- Reuse Factorio technology and science-pack assets as the primary visual identity.
+- Keep controls, nodes, and details visually consistent with one window system.
+- Favor strong contrast and clear hierarchy; decoration should reinforce state or structure.
+- Preserve smooth navigation. Pan and zoom should stay off React's render path, and graph
+  elements should avoid paint-heavy effects that compromise interaction performance.
+
 ## Crawler Architecture
 
 - `config.py` defines root URLs and the default output path.
