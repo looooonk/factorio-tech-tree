@@ -9,13 +9,29 @@ export type GroupColumn = {
     height: number;
 };
 
+export type PlanetColumn = GroupColumn & {
+    id: string;
+    label: string;
+};
+
 export type Layout = {
     width: number;
     height: number;
     positions: Record<string, { x: number; y: number }>;
     sizes: Record<string, { width: number; height: number }>;
     group_columns: GroupColumn[];
+    planet_columns: PlanetColumn[];
 };
+
+const planet_lanes = [
+    { id: "fulgora", label: "Fulgora", root_id: "planet_discovery_fulgora" },
+    { id: "gleba", label: "Gleba", root_id: "planet_discovery_gleba" },
+    { id: "vulcanus", label: "Vulcanus", root_id: "planet_discovery_vulcanus" },
+] as const;
+const aquilo_root_id = "planet_discovery_aquilo";
+const merge_trunk_node_ids = new Set([aquilo_root_id, "lithium_processing"]);
+
+type PlanetLaneId = (typeof planet_lanes)[number]["id"];
 
 // --- Group detection ---
 
@@ -62,6 +78,75 @@ function detect_group_membership(nodes: GraphNode[]): Map<string, string> {
     }
 
     return result;
+}
+
+function assign_planet_lanes(
+    nodes: GraphNode[],
+    title_sort: (a: GraphNode, b: GraphNode) => number,
+): Map<string, PlanetLaneId> {
+    const ordered_nodes = [...nodes].sort((a, b) => a.level - b.level || title_sort(a, b));
+    const memberships = new Map<string, Set<PlanetLaneId>>();
+    const aquilo_descendants = new Set<string>();
+
+    for (const node of ordered_nodes) {
+        if (
+            node.id === aquilo_root_id ||
+            node.prerequisites.some((id) => aquilo_descendants.has(id))
+        ) {
+            aquilo_descendants.add(node.id);
+            continue;
+        }
+
+        const membership = new Set<PlanetLaneId>();
+        const root_lane = planet_lanes.find((lane) => lane.root_id === node.id);
+        if (root_lane) membership.add(root_lane.id);
+        for (const prerequisite_id of node.prerequisites) {
+            for (const lane_id of memberships.get(prerequisite_id) ?? []) {
+                membership.add(lane_id);
+            }
+        }
+        if (membership.size > 0) memberships.set(node.id, membership);
+    }
+
+    const assignments = new Map<string, PlanetLaneId>();
+    const row_counts = new Map<string, number>();
+    const planet_nodes = ordered_nodes.filter((node) => memberships.has(node.id));
+    const count_key = (level: number, lane_id: PlanetLaneId) => `${level}:${lane_id}`;
+
+    for (const node of planet_nodes) {
+        const membership = memberships.get(node.id)!;
+        if (membership.size !== 1) continue;
+        const lane_id = membership.values().next().value as PlanetLaneId;
+        assignments.set(node.id, lane_id);
+        const key = count_key(node.level, lane_id);
+        row_counts.set(key, (row_counts.get(key) ?? 0) + 1);
+    }
+
+    for (const node of planet_nodes) {
+        const membership = memberships.get(node.id)!;
+        if (membership.size === 1) continue;
+        const lane_id = [...membership].sort((a, b) => {
+            const a_connections = node.prerequisites.filter(
+                (id) => assignments.get(id) === a,
+            ).length;
+            const b_connections = node.prerequisites.filter(
+                (id) => assignments.get(id) === b,
+            ).length;
+            if (a_connections !== b_connections) return b_connections - a_connections;
+
+            const count_difference =
+                (row_counts.get(count_key(node.level, a)) ?? 0) -
+                (row_counts.get(count_key(node.level, b)) ?? 0);
+            if (count_difference !== 0) return count_difference;
+            return planet_lanes.findIndex((lane) => lane.id === a) -
+                planet_lanes.findIndex((lane) => lane.id === b);
+        })[0];
+        assignments.set(node.id, lane_id);
+        const key = count_key(node.level, lane_id);
+        row_counts.set(key, (row_counts.get(key) ?? 0) + 1);
+    }
+
+    return assignments;
 }
 
 // --- Layout ---
@@ -116,8 +201,11 @@ export function build_layout(nodes: GraphNode[]): Layout {
     // --- Phase 2: trunk / side-lane partitioning ---
 
     const group_membership = detect_group_membership(nodes);
+    const planet_assignments = assign_planet_lanes(nodes, title_sort);
     const trunk_nodes = nodes.filter((n) => !group_membership.has(n.id));
     const group_nodes = nodes.filter((n) => group_membership.has(n.id));
+    const planet_nodes = trunk_nodes.filter((n) => planet_assignments.has(n.id));
+    const common_nodes = trunk_nodes.filter((n) => !planet_assignments.has(n.id));
 
     // Distribute group bases into alternating left/right lanes, sorted
     // alphabetically so the assignment is deterministic across re-renders.
@@ -140,23 +228,77 @@ export function build_layout(nodes: GraphNode[]): Layout {
 
     // --- Phase 3: trunk geometry ---
 
-    const trunk_nodes_by_level = new Map<number, GraphNode[]>();
-    for (const node of trunk_nodes) {
-        const level_nodes = trunk_nodes_by_level.get(node.level) ?? [];
+    const common_nodes_by_level = new Map<number, GraphNode[]>();
+    for (const node of common_nodes) {
+        const level_nodes = common_nodes_by_level.get(node.level) ?? [];
         level_nodes.push(node);
-        trunk_nodes_by_level.set(node.level, level_nodes);
+        common_nodes_by_level.set(node.level, level_nodes);
     }
-    for (const level_nodes of trunk_nodes_by_level.values()) {
+    for (const level_nodes of common_nodes_by_level.values()) {
         level_nodes.sort(title_sort);
+        const aquilo_index = level_nodes.findIndex((node) => node.id === aquilo_root_id);
+        if (aquilo_index >= 0) {
+            const [aquilo_node] = level_nodes.splice(aquilo_index, 1);
+            level_nodes.splice(Math.floor(level_nodes.length / 2), 0, aquilo_node);
+        }
     }
 
-    const max_trunk_nodes_per_level = Math.max(
-        1,
-        ...Array.from(trunk_nodes_by_level.values()).map((l) => l.length),
+    const planet_nodes_by_lane_and_level = new Map<PlanetLaneId, Map<number, GraphNode[]>>(
+        planet_lanes.map((lane) => [lane.id, new Map()]),
     );
-    const trunk_zone_width =
-        max_trunk_nodes_per_level * node_width +
-        Math.max(0, max_trunk_nodes_per_level - 1) * node_gap_x;
+    for (const node of planet_nodes) {
+        const lane_id = planet_assignments.get(node.id)!;
+        const lane_levels = planet_nodes_by_lane_and_level.get(lane_id)!;
+        const level_nodes = lane_levels.get(node.level) ?? [];
+        level_nodes.push(node);
+        lane_levels.set(node.level, level_nodes);
+    }
+    for (const lane_levels of planet_nodes_by_lane_and_level.values()) {
+        for (const level_nodes of lane_levels.values()) level_nodes.sort(title_sort);
+    }
+    const active_planet_lanes = planet_lanes.filter(
+        (lane) => planet_nodes_by_lane_and_level.get(lane.id)!.size > 0,
+    );
+
+    const row_width = (count: number) =>
+        count * node_width + Math.max(0, count - 1) * node_gap_x;
+    const planet_padding_x = 88;
+    const planet_gap_x = node_width + node_gap_x * 2;
+    const planet_lane_widths = new Map(
+        active_planet_lanes.map((lane) => {
+            const lane_levels = planet_nodes_by_lane_and_level.get(lane.id)!;
+            const max_width = Math.max(
+                0,
+                ...[...lane_levels.values()].map((row) => row_width(row.length)),
+            );
+            return [lane.id, max_width + planet_padding_x * 2] as const;
+        }),
+    );
+    const planet_block_width = active_planet_lanes.reduce(
+        (sum, lane) => sum + (planet_lane_widths.get(lane.id) ?? 0),
+        Math.max(0, active_planet_lanes.length - 1) * planet_gap_x,
+    );
+    const planet_levels = planet_nodes.map((node) => node.level);
+    const first_planet_level = planet_levels.length > 0 ? Math.min(...planet_levels) : -1;
+    const last_planet_level = planet_levels.length > 0 ? Math.max(...planet_levels) : -1;
+    const aquilo_level = nodes.find((node) => node.id === aquilo_root_id)?.level ?? Infinity;
+    const last_parallel_level = Math.min(last_planet_level, aquilo_level - 1);
+    const parallel_common_width = Math.max(
+        0,
+        ...Array.from(common_nodes_by_level.entries())
+            .filter(([level]) => level >= first_planet_level && level <= last_parallel_level)
+            .map(([, level_nodes]) => row_width(level_nodes.length)),
+    );
+    const parallel_gap_x = parallel_common_width > 0 ? node_gap_x * 3 : 0;
+    const parallel_strip_width = parallel_common_width + parallel_gap_x;
+    const max_common_row_width = Math.max(
+        node_width,
+        ...[...common_nodes_by_level.values()].map((level_nodes) => row_width(level_nodes.length)),
+    );
+    const trunk_zone_width = Math.max(
+        max_common_row_width,
+        planet_block_width + parallel_strip_width * 2,
+    );
 
     // --- Phase 4: side-lane geometry ---
 
@@ -184,8 +326,23 @@ export function build_layout(nodes: GraphNode[]): Layout {
 
     const trunk_left_x = canvas_padding + left_zone_width;
     const trunk_right_x = trunk_left_x + trunk_zone_width;
+    const planet_block_left_x =
+        trunk_left_x + Math.max(0, (trunk_zone_width - planet_block_width) / 2);
+    const branch_left_x = planet_block_left_x - parallel_strip_width;
+    const planet_lane_left_x = new Map<PlanetLaneId, number>();
+    let next_planet_x = planet_block_left_x;
+    for (const lane of active_planet_lanes) {
+        planet_lane_left_x.set(lane.id, next_planet_x);
+        next_planet_x += (planet_lane_widths.get(lane.id) ?? 0) + planet_gap_x;
+    }
+    const gleba_right_x =
+        (planet_lane_left_x.get("gleba") ?? planet_block_left_x) +
+        (planet_lane_widths.get("gleba") ?? 0);
+    const vulcanus_left_x = planet_lane_left_x.get("vulcanus") ?? gleba_right_x;
+    const merge_trunk_x = (gleba_right_x + vulcanus_left_x - node_width) / 2;
 
     const total_levels = max_level + 1;
+    const branch_entry_gap_y = first_planet_level > 0 ? 360 : 0;
     const width = canvas_padding * 2 + left_zone_width + trunk_zone_width + right_zone_width;
     const height =
         canvas_padding * 2 +
@@ -193,7 +350,8 @@ export function build_layout(nodes: GraphNode[]): Layout {
             (sum, v) => sum + v,
             0,
         ) +
-        Math.max(0, total_levels - 1) * node_gap_y;
+        Math.max(0, total_levels - 1) * node_gap_y +
+        branch_entry_gap_y;
 
     // --- Phase 5: position assignment ---
 
@@ -203,20 +361,49 @@ export function build_layout(nodes: GraphNode[]): Layout {
     for (let level = 0; level <= max_level; level++) {
         level_y.set(level, current_y);
         current_y += (level_heights.get(level) ?? 0) + node_gap_y;
+        if (level + 1 === first_planet_level) current_y += branch_entry_gap_y;
     }
 
     const positions: Record<string, { x: number; y: number }> = {};
 
-    // Trunk: each level's row is centered within the trunk zone.
+    // Common trunk: branch-era nodes use a parallel strip; all other rows stay centered.
     for (let level = 0; level <= max_level; level++) {
-        const level_nodes = trunk_nodes_by_level.get(level) ?? [];
-        const row_width =
-            level_nodes.length * node_width +
-            Math.max(0, level_nodes.length - 1) * node_gap_x;
-        const offset_x = trunk_left_x + Math.max(0, (trunk_zone_width - row_width) / 2);
+        const level_nodes = common_nodes_by_level.get(level) ?? [];
+        const level_row_width = row_width(level_nodes.length);
+        const is_parallel = level >= first_planet_level && level <= last_parallel_level;
+        const offset_x = is_parallel
+            ? branch_left_x + Math.max(0, (parallel_common_width - level_row_width) / 2)
+            : trunk_left_x + Math.max(0, (trunk_zone_width - level_row_width) / 2);
         const y = level_y.get(level) ?? 0;
         for (const [index, node] of level_nodes.entries()) {
-            positions[node.id] = { x: offset_x + index * (node_width + node_gap_x), y };
+            positions[node.id] = {
+                x: merge_trunk_node_ids.has(node.id)
+                    ? merge_trunk_x
+                    : offset_x + index * (node_width + node_gap_x),
+                y,
+            };
+        }
+    }
+
+    for (const lane of active_planet_lanes) {
+        const lane_levels = planet_nodes_by_lane_and_level.get(lane.id)!;
+        const lane_left_x = planet_lane_left_x.get(lane.id) ?? planet_block_left_x;
+        const lane_width = planet_lane_widths.get(lane.id) ?? 0;
+        for (const [level, level_nodes] of lane_levels) {
+            const level_row_width = row_width(level_nodes.length);
+            const centered_offset = Math.max(0, (lane_width - level_row_width) / 2);
+            const lane_center_x = lane_left_x + lane_width / 2;
+            const planet_center_x = planet_block_left_x + planet_block_width / 2;
+            const offset_x =
+                level === aquilo_level
+                    ? lane_center_x < planet_center_x
+                        ? lane_left_x + planet_padding_x
+                        : lane_left_x + lane_width - planet_padding_x - level_row_width
+                    : lane_left_x + centered_offset;
+            const y = level_y.get(level) ?? 0;
+            for (const [index, node] of level_nodes.entries()) {
+                positions[node.id] = { x: offset_x + index * (node_width + node_gap_x), y };
+            }
         }
     }
 
@@ -264,5 +451,27 @@ export function build_layout(nodes: GraphNode[]): Layout {
         });
     }
 
-    return { width, height, positions, sizes, group_columns };
+    const planet_padding_top = 220;
+    const planet_padding_bottom = 88;
+    const planet_columns: PlanetColumn[] = [];
+    for (const lane of active_planet_lanes) {
+        const lane_nodes = planet_nodes.filter(
+            (node) => planet_assignments.get(node.id) === lane.id,
+        );
+        if (lane_nodes.length === 0) continue;
+        const top = Math.min(...lane_nodes.map((node) => positions[node.id].y));
+        const bottom = Math.max(
+            ...lane_nodes.map((node) => positions[node.id].y + sizes[node.id].height),
+        );
+        planet_columns.push({
+            id: lane.id,
+            label: lane.label,
+            x: planet_lane_left_x.get(lane.id) ?? 0,
+            y: top - planet_padding_top,
+            width: planet_lane_widths.get(lane.id) ?? 0,
+            height: bottom - top + planet_padding_top + planet_padding_bottom,
+        });
+    }
+
+    return { width, height, positions, sizes, group_columns, planet_columns };
 }

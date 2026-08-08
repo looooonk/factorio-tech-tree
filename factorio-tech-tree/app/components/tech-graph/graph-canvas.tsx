@@ -405,6 +405,44 @@ export default function GraphCanvas({
                     height={layout.height}
                     viewBox={`0 0 ${layout.width} ${layout.height}`}
                 >
+                    {layout.planet_columns.map((column) => (
+                        <g
+                            key={column.id}
+                            className={`planet-column planet-column-${column.id}`}
+                        >
+                            <rect
+                                className="planet-column-bg"
+                                x={column.x}
+                                y={column.y}
+                                width={column.width}
+                                height={column.height}
+                                rx={3}
+                            />
+                            <rect
+                                className="planet-column-border"
+                                x={column.x}
+                                y={column.y}
+                                width={column.width}
+                                height={column.height}
+                                rx={3}
+                            />
+                            <image
+                                className="planet-column-icon"
+                                href={`/data/tech_images/planet_discovery_${column.id}.png`}
+                                x={column.x + 48}
+                                y={column.y - 244}
+                                width={216}
+                                height={216}
+                            />
+                            <text
+                                className="planet-column-label"
+                                x={column.x + 300}
+                                y={column.y - 102}
+                            >
+                                {column.label}
+                            </text>
+                        </g>
+                    ))}
                     {layout.group_columns.map((col, i) => (
                         <rect
                             key={i}

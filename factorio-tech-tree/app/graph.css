@@ -487,6 +487,52 @@
     opacity: 1;
 }
 
+.planet-column {
+    --planet-fill: rgba(152, 85, 19, 0.08);
+    --planet-line: rgba(218, 132, 35, 0.56);
+    --planet-text: #eea248;
+}
+
+.planet-column-fulgora {
+    --planet-fill: rgba(105, 65, 87, 0.13);
+    --planet-line: rgba(180, 111, 145, 0.68);
+    --planet-text: #d9a0bd;
+}
+
+.planet-column-gleba {
+    --planet-fill: rgba(59, 91, 47, 0.13);
+    --planet-line: rgba(123, 166, 88, 0.68);
+    --planet-text: #b4d27f;
+}
+
+.planet-column-vulcanus {
+    --planet-fill: rgba(107, 42, 29, 0.14);
+    --planet-line: rgba(193, 76, 50, 0.7);
+    --planet-text: #e28a66;
+}
+
+.planet-column-bg {
+    fill: var(--planet-fill);
+}
+
+.planet-column-border {
+    fill: none;
+    stroke: var(--planet-line);
+    stroke-width: 2;
+}
+
+.planet-column-icon {
+    filter: drop-shadow(0 7px 8px rgba(0, 0, 0, 0.78));
+}
+
+.planet-column-label {
+    fill: var(--planet-text);
+    font-size: 86px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.86));
+}
+
 .group-column-bg {
     fill: rgba(152, 85, 19, 0.09);
     stroke: rgba(218, 132, 35, 0.42);
