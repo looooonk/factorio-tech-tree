@@ -49,7 +49,6 @@ export default function GraphDetails({
                         </div>
                     </div>
                     <div className="details-section">
-                        <div className="details-section-title">Description</div>
                         <p className="details-description">{selected_node.description}</p>
                     </div>
                     <div className="details-section">
