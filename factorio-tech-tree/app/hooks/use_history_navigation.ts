@@ -27,7 +27,7 @@ type UseHistoryNavigationResult = {
  *
  * Stack capacity is capped at 100 entries to bound memory usage.
  */
-export function use_history_navigation({
+export function useHistoryNavigation({
     on_navigate,
 }: UseHistoryNavigationOptions): UseHistoryNavigationResult {
     const history_ref = useRef<{ stack: string[]; index: number }>({

@@ -7,10 +7,11 @@ import GraphDetails from "./components/tech-graph/graph-details";
 import type { GraphEdge, GraphNode } from "./lib/tech-tree/types";
 import { build_layout } from "./lib/tech-graph/graph-layout";
 import { node_width, science_pack_name_map } from "./lib/tech-graph/constants";
+import { compute_total_requirements } from "./lib/tech-graph/utils";
 import type { GraphEdgePath, GraphSelection } from "./lib/tech-graph/types";
-import { use_pan_zoom } from "./hooks/use_pan_zoom";
-import { use_history_navigation } from "./hooks/use_history_navigation";
-import { use_filter_state } from "./hooks/use_filter_state";
+import { usePanZoom } from "./hooks/use_pan_zoom";
+import { useHistoryNavigation } from "./hooks/use_history_navigation";
+import { useFilterState } from "./hooks/use_filter_state";
 
 // --- Module-level constants ---
 
@@ -60,8 +61,12 @@ function build_edge_index(edges: GraphEdge[]): EdgeIndex {
 // --- Component ---
 
 export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
-    const container_ref = useRef<HTMLDivElement | null>(null);
     const [selected_node_id, set_selected_node_id] = useState<string | null>(null);
+    const [totals_visible, set_totals_visible] = useState(true);
+    const [details_visible, set_details_visible] = useState(true);
+
+    const toggle_totals = useCallback(() => set_totals_visible((visible) => !visible), []);
+    const toggle_details = useCallback(() => set_details_visible((visible) => !visible), []);
 
     // --- Derived data ---
 
@@ -90,9 +95,10 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         set_search_query,
         depth_mode,
         set_depth_mode,
-    } = use_filter_state(all_filter_ids);
+    } = useFilterState(all_filter_ids);
 
     const {
+        container_ref,
         viewport_ref,
         fit_to_view,
         on_zoom_in,
@@ -101,8 +107,7 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         on_pointer_down,
         on_pointer_move,
         on_pointer_up,
-    } = use_pan_zoom({
-        container_ref,
+    } = usePanZoom({
         get_layout_size,
         on_canvas_click: () => set_selected_node_id(null),
     });
@@ -110,11 +115,11 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
     // --- Navigation ---
 
     // focus_node_ref breaks the circular dependency between focus_node and
-    // use_history_navigation: the hook's on_navigate callback reads from this
+    // useHistoryNavigation: the hook's on_navigate callback reads from this
     // ref, so it doesn't need focus_node in its closure at declaration time.
     const focus_node_ref = useRef<((node_id: string, opts?: { record_history?: boolean }) => void) | null>(null);
 
-    const { record_history } = use_history_navigation({
+    const { record_history } = useHistoryNavigation({
         on_navigate: (node_id) => focus_node_ref.current?.(node_id, { record_history: false }),
     });
 
@@ -288,6 +293,14 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
         return ancestors ? new Set([...base, ...ancestors.node_ids]) : base;
     }, [ancestors_index, depth_mode, selected_node_id, selection_entry]);
 
+    const total_requirements = useMemo(() => {
+        if (!totals_visible || !selected_node_id || depth_mode !== "ancestors") return null;
+        const ancestors = ancestors_index.get(selected_node_id);
+        if (!ancestors) return null;
+        const node_ids = new Set([...ancestors.node_ids, selected_node_id]);
+        return compute_total_requirements(node_ids, nodes_by_id);
+    }, [ancestors_index, depth_mode, nodes_by_id, selected_node_id, totals_visible]);
+
     // --- Filter matching ---
 
     /**
@@ -361,12 +374,19 @@ export default function TechGraph({ nodes, edges, root_ids }: GraphViewProps) {
                 on_focus_node={focus_node}
                 depth_mode={depth_mode}
                 on_change_depth_mode={set_depth_mode}
+                total_requirements={total_requirements}
+                totals_visible={totals_visible}
+                details_visible={details_visible}
+                on_toggle_totals={toggle_totals}
+                on_toggle_details={toggle_details}
             />
-            <GraphDetails
-                selection={selection}
-                selected_node={selected_node}
-                on_focus_node={focus_node}
-            />
+            {details_visible && (
+                <GraphDetails
+                    selection={selection}
+                    selected_node={selected_node}
+                    on_focus_node={focus_node}
+                />
+            )}
         </section>
     );
 }

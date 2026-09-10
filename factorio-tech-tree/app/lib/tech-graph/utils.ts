@@ -128,3 +128,82 @@ export function get_node_height(node: GraphNode) {
 export function clamp(value: number, min: number, max: number) {
     return Math.min(max, Math.max(min, value));
 }
+
+function parse_numeric_text(text: string | null | undefined): number | null {
+    if (!text) {
+        return null;
+    }
+    const cleaned = text.replace(/,/g, "").trim();
+    if (!/^\d+(\.\d+)?$/.test(cleaned)) {
+        return null;
+    }
+    const value = Number(cleaned);
+    return Number.isFinite(value) ? value : null;
+}
+
+// Formula-based and repeatable research cannot be included in a finite total.
+function resolve_node_science_totals(
+    node: GraphNode,
+): Map<string, number> | null {
+    if (node.research_type !== "science") {
+        return new Map();
+    }
+    if (node.is_infinite || !node.research_science) return null;
+    const research_science = node.research_science;
+    const unit_count =
+        typeof research_science.unit_count === "number"
+            ? research_science.unit_count
+            : parse_numeric_text(research_science.unit_count_text);
+    if (unit_count === null || !Number.isFinite(unit_count) || unit_count < 0) {
+        return null;
+    }
+    const totals = new Map<string, number>();
+    for (const pack of research_science.science_packs) {
+        const internal_name = science_pack_name_map[pack.name];
+        if (!internal_name) {
+            continue;
+        }
+        const per_unit =
+            typeof pack.amount_per_unit === "number"
+                ? pack.amount_per_unit
+                : (pack.amount_text?.trim() ? parse_numeric_text(pack.amount_text) : 1);
+        if (per_unit === null || !Number.isFinite(per_unit) || per_unit < 0) return null;
+        totals.set(internal_name, (totals.get(internal_name) ?? 0) + unit_count * per_unit);
+    }
+    return totals;
+}
+
+export type TotalRequirements = {
+    pack_totals: { internal_name: string; name: string; amount: number }[];
+    excluded_count: number;
+};
+
+export function compute_total_requirements(
+    node_ids: Iterable<string>,
+    nodes_by_id: Map<string, GraphNode>,
+): TotalRequirements {
+    const totals = new Map<string, number>();
+    let excluded_count = 0;
+    for (const id of new Set(node_ids)) {
+        const node = nodes_by_id.get(id);
+        if (!node) {
+            continue;
+        }
+        const node_totals = resolve_node_science_totals(node);
+        if (node_totals === null) {
+            excluded_count += 1;
+            continue;
+        }
+        for (const [internal_name, amount] of node_totals) {
+            totals.set(internal_name, (totals.get(internal_name) ?? 0) + amount);
+        }
+    }
+    const pack_totals = Object.entries(science_pack_name_map)
+        .filter(([, internal_name]) => totals.has(internal_name))
+        .map(([name, internal_name]) => ({
+            internal_name,
+            name,
+            amount: totals.get(internal_name)!,
+        }));
+    return { pack_totals, excluded_count };
+}

@@ -7,8 +7,6 @@ import { max_zoom, min_zoom, pan_boundary } from "../lib/tech-graph/constants";
 import { clamp } from "../lib/tech-graph/utils";
 
 type UsePanZoomOptions = {
-    /** Ref to the scrollable container element. */
-    container_ref: React.RefObject<HTMLDivElement | null>;
     /** Returns the current layout dimensions; called inside fit_to_view. */
     get_layout_size: () => { width: number; height: number };
     /**
@@ -19,6 +17,7 @@ type UsePanZoomOptions = {
 };
 
 type UsePanZoomResult = {
+    container_ref: React.RefObject<HTMLDivElement | null>;
     viewport_ref: React.RefObject<HTMLDivElement | null>;
     update_zoom: (next_scale: number, anchor_x?: number, anchor_y?: number) => void;
     fit_to_view: () => void;
@@ -46,11 +45,11 @@ function constrain_axis(position: number, content_size: number, viewport_size: n
  * Handles mouse-wheel zoom anchored at the cursor position, click-drag panning,
  * smooth focus animations, and fit-to-view on mount/resize.
  */
-export function use_pan_zoom({
-    container_ref,
+export function usePanZoom({
     get_layout_size,
     on_canvas_click,
 }: UsePanZoomOptions): UsePanZoomResult {
+    const container_ref = useRef<HTMLDivElement | null>(null);
     const viewport_ref = useRef<HTMLDivElement | null>(null);
     const transform_ref = useRef<Transform>({ x: 0, y: 0, scale: 1 });
     const viewport_size_ref = useRef({ width: 0, height: 0 });
@@ -275,6 +274,7 @@ export function use_pan_zoom({
     }, [cancel_focus_animation, cancel_transform_frame]);
 
     return {
+        container_ref,
         viewport_ref,
         update_zoom,
         fit_to_view,

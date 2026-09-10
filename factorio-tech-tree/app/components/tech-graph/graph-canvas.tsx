@@ -2,12 +2,14 @@ import { memo, useMemo } from "react";
 import type { CSSProperties, PointerEvent, RefObject } from "react";
 import Image from "next/image";
 import { FaTools } from "react-icons/fa";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 import DepthToggle from "../depth-toggle";
 import type { DepthMode } from "../depth-toggle";
 import type { GraphNode } from "../../lib/tech-tree/types";
 import type { Layout } from "../../lib/tech-graph/graph-layout";
 import type { GraphEdgePath } from "../../lib/tech-graph/types";
+import type { TotalRequirements } from "../../lib/tech-graph/utils";
 import { node_width, science_pack_size, science_pack_gap } from "../../lib/tech-graph/constants";
 import {
     format_title,
@@ -52,6 +54,11 @@ type GraphCanvasProps = {
     on_focus_node: (node_id: string) => void;
     depth_mode: DepthMode;
     on_change_depth_mode: (mode: DepthMode) => void;
+    total_requirements: TotalRequirements | null;
+    totals_visible: boolean;
+    details_visible: boolean;
+    on_toggle_totals: () => void;
+    on_toggle_details: () => void;
 };
 
 // --- Sub-components ---
@@ -197,6 +204,11 @@ export default function GraphCanvas({
     on_focus_node,
     depth_mode,
     on_change_depth_mode,
+    total_requirements,
+    totals_visible,
+    details_visible,
+    on_toggle_totals,
+    on_toggle_details,
 }: GraphCanvasProps) {
     const misc_active = active_filters.has("misc");
     const edge_path = useMemo(() => edges.map((edge) => edge.path).join(" "), [edges]);
@@ -211,7 +223,7 @@ export default function GraphCanvas({
     return (
         <div
             ref={container_ref}
-            className="graph-canvas"
+            className={`graph-canvas${details_visible ? "" : " is-details-hidden"}`}
             onPointerDown={on_pointer_down}
             onPointerMove={on_pointer_move}
             onPointerUp={on_pointer_up}
@@ -238,7 +250,66 @@ export default function GraphCanvas({
                     </button>
                 </div>
                 <DepthToggle mode={depth_mode} on_change={on_change_depth_mode} />
+                <div className="graph-panel-toggles" role="group" aria-label="Panel visibility">
+                    <button
+                        type="button"
+                        className="graph-filter-action"
+                        aria-label="Total requirements panel"
+                        aria-pressed={totals_visible}
+                        title={`${totals_visible ? "Hide" : "Show"} total requirements`}
+                        onClick={on_toggle_totals}
+                    >
+                        {totals_visible ? <FiEye aria-hidden /> : <FiEyeOff aria-hidden />}
+                        Totals
+                    </button>
+                    <button
+                        type="button"
+                        className="graph-filter-action"
+                        aria-label="Technology details panel"
+                        aria-pressed={details_visible}
+                        title={`${details_visible ? "Hide" : "Show"} technology details`}
+                        onClick={on_toggle_details}
+                    >
+                        {details_visible ? <FiEye aria-hidden /> : <FiEyeOff aria-hidden />}
+                        Details
+                    </button>
+                </div>
             </div>
+
+            {total_requirements && (
+                <section className="graph-totals-panel" aria-label="Total requirements" data-no-pan data-no-zoom>
+                    <div className="graph-panel-title">Total requirements</div>
+                    {total_requirements.pack_totals.length === 0 ? (
+                        <div className="graph-totals-empty">No science pack requirements.</div>
+                    ) : (
+                        <div className="graph-totals-list">
+                            {total_requirements.pack_totals.map((pack) => (
+                                <div key={pack.internal_name} className="graph-totals-item" title={pack.name}>
+                                    <Image
+                                        src={`/data/tech_images/${pack.internal_name}.png`}
+                                        alt={pack.name}
+                                        width={32}
+                                        height={32}
+                                        unoptimized
+                                        loading="lazy"
+                                        decoding="async"
+                                        draggable={false}
+                                    />
+                                    <span className="graph-totals-count">
+                                        {Math.round(pack.amount).toLocaleString()}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {total_requirements.excluded_count > 0 && (
+                        <div className="graph-totals-note">
+                            {total_requirements.excluded_count} infinite/unresolved{" "}
+                            {total_requirements.excluded_count === 1 ? "tech" : "techs"} excluded.
+                        </div>
+                    )}
+                </section>
+            )}
 
             <div className="graph-filter-stack" data-no-pan data-no-zoom>
                 <div className="graph-filter-panel" data-no-pan data-no-zoom>

@@ -174,9 +174,10 @@ When changing edge logic, preserve deduplication and internal-ID normalization.
 
 ## Style Conventions
 
-- Use `snake_case` for TypeScript variables, functions, props, and hooks.
+- Use `snake_case` for TypeScript variables, functions, and props.
+- Custom hooks must use React's `useCamelCase` naming so hook lint rules recognize them.
 - Use `kebab-case` for component filenames and CSS classes.
-- Use `snake_case` for hook filenames to match their exports.
+- Keep hook filenames in `snake_case`.
 - Keep code concise, but do not trade clarity for "black magic."
 - Follow the existing four-space indentation where present.
 
