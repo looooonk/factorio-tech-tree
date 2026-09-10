@@ -45,71 +45,56 @@ Do not claim completion without reporting what was verified.
 
 ## Repository Scope
 
-This repository has two independent working areas:
+The Next.js 16, React 19, TypeScript, and Tailwind CSS v4 app lives at repository root.
+`data-gatherer/` exports and normalizes the installed macOS Factorio + Space Age game.
+There is no web scraper.
 
-| Path | Responsibility |
-| --- | --- |
-| `crawler/` | Python crawler that scrapes Factorio Wiki research pages and emits JSONL |
-| `factorio-tech-tree/` | Next.js 16, React 19, TypeScript, and Tailwind CSS v4 visualization app |
-
-Keep changes within the relevant area unless the task changes their shared data contract.
-If that contract changes, update both producer and consumer and regenerate data only when needed.
-
-## Commands
-
-Run app commands from `factorio-tech-tree/`:
+Run app commands from repository root:
 
 ```bash
+npm ci
 npm run dev
+npm test
+npm run typecheck
 npm run lint
 npm run build
 ```
 
-Set up and run the crawler from `crawler/`:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install requests beautifulsoup4
-python main.py --output-jsonl ../factorio-tech-tree/data/tech_tree.jsonl
-```
-
-Useful crawler options:
-
-```bash
-python main.py --sleep 0.5
-python main.py --quiet
-```
-
-The default delay is 0.1 seconds; do not run a full crawl unless fresh data is required.
-
 ## Data Flow and Contracts
 
-1. The crawler traverses research pages and writes one `TechNode` JSON object per line.
-2. App source data lives at `factorio-tech-tree/data/tech_tree.jsonl`.
-3. Icons are served from `factorio-tech-tree/public/data/tech_images/`.
-4. `app/lib/tech-tree/load-tech-tree.ts` reads JSONL at build time.
-5. `app/page.tsx` passes the processed graph to the client-side `TechGraph`.
+1. `data-gatherer/export.ts` runs Factorio's data, locale, and icon exports with an isolated
+   English profile containing only base, elevated-rails, quality, and space-age.
+2. `data-gatherer/normalize.ts` resolves native IDs, prerequisites, science costs, triggers,
+   research levels, descriptions, and effects. Missing descriptions use factual effect summaries.
+3. `data-gatherer/cli.ts` validates and stages all output before publishing `data/tech_tree.jsonl`,
+   `data/manifest.json`, and selected icons in `public/data/`.
+4. `app/lib/tech-tree/load-tech-tree.ts` validates data at build time and computes graph depth.
+5. `app/page.tsx` passes the graph and science-pack metadata to the client-side `TechGraph`.
 
-The raw `TechNode` requires `id` and `title`; other crawler fields are optional.
-Important fields include dependencies, URL, image path, research type, science packs, and condition text.
+Use `npm run data:generate` only when fresh game data is required. Use
+`npm run data:generate -- --reuse-exports` to normalize a previously verified export.
+The default executable is the macOS Steam installation; `--factorio` or `FACTORIO_BIN`
+can override it. Keep all working files under `.cache/factorio-export/`.
+Never read or modify saves or use the player's personal mod/config directory for exports.
+Website builds must work without a Factorio installation.
 
-The loader prefers `required_technologies_merged` over `required_technologies`.
-It ignores unknown dependencies and removes self-loops from edges while preserving `is_infinite` markers.
-Do not remove this distinction: Factorio uses self-reference for repeatable research.
+Native prototype names are canonical IDs. Prerequisites must resolve and may not contain
+self-loops or cycles. Repeatability comes from explicit `max_research_level` and `is_infinite`
+fields, never from self-references or display names. Do not confuse graph depth (`level`)
+with research level (`research_level`). Edge IDs use `${from}::${to}`.
 
-The loader assigns levels with a topological pass.
-Roots have level 0; unresolved cycles receive a best-effort fallback level.
-It returns `TechTreeData` with `nodes`, `edges`, `root_ids`, and `max_level`.
-Edge IDs use `${from}::${to}`.
+Science packs have independent IDs, localized names, image paths, and technology references.
+Descriptions always have text and a `description_source` of `locale` or `effects`.
+Preserve native effect fields and structured research triggers. Fail on unsupported data
+rather than silently omitting it. Full game dumps and installation paths are not committed.
 
-When editing the data contract, inspect these files together:
+When changing the contract, inspect:
 
-- `crawler/models.py`
-- `crawler/crawl.py`
-- `crawler/parsing.py`
-- `factorio-tech-tree/app/lib/tech-tree/types.ts`
-- `factorio-tech-tree/app/lib/tech-tree/load-tech-tree.ts`
+- `data-gatherer/types.ts`
+- `data-gatherer/normalize.ts`
+- `app/lib/tech-tree/types.ts`
+- `app/lib/tech-tree/validate.ts`
+- `app/lib/tech-tree/load-tech-tree.ts`
 
 ## App Architecture
 
@@ -158,20 +143,6 @@ compact, and focused on the technology graph.
 - Preserve smooth navigation. Pan and zoom should stay off React's render path, and graph
   elements should avoid paint-heavy effects that compromise interaction performance.
 
-## Crawler Architecture
-
-- `config.py` defines root URLs and the default output path.
-- `http_client.py` configures the requests session and fetches HTML.
-- `parsing.py` extracts research records from individual pages.
-- `crawl.py` performs BFS, normalizes references, and merges derived prerequisites.
-- `models.py` defines raw and normalized records.
-- `io_utils.py` writes JSONL output.
-- `main.py` provides the command-line entry point.
-
-Preserve crawler politeness controls and error records.
-Do not make parsing depend on presentation details without checking representative pages.
-When changing edge logic, preserve deduplication and internal-ID normalization.
-
 ## Style Conventions
 
 - Use `snake_case` for TypeScript variables, functions, and props.
@@ -188,23 +159,21 @@ Use ASCII only in source-code comments.
 
 ## Validation by Scope
 
-For app-only changes, run the checks relevant to the touched code:
+For app and gatherer changes, run relevant focused tests followed by:
 
 ```bash
-cd factorio-tech-tree
+npm test
+npm run typecheck
 npm run lint
 npm run build
 ```
 
-For crawler changes, run focused Python checks or a small fixture-based parse first.
-Avoid using a live full crawl as the only validation because the wiki is external and mutable.
-
-For generated data changes, verify that JSONL parses, IDs are unique,
-dependencies resolve as expected, and the app still builds.
+For gatherer changes, test valid and invalid fixtures. When game exports are available,
+regenerate and verify deterministic output, resolved dependencies, description coverage,
+effect references, and icons. Do not rely only on the current live game installation.
 
 Before handing off:
 
-- Review the diff for unrelated edits.
-- Confirm generated artifacts were changed intentionally.
-- Report checks run and any checks not run.
-- Note remaining uncertainty rather than hiding it.
+- Review the diff for unrelated edits and unintended generated files.
+- Verify the browser's search, details, filters, navigation, ancestor highlights, and pan/zoom.
+- Report checks run and any remaining uncertainty.
