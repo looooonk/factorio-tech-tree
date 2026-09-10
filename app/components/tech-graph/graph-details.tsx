@@ -115,7 +115,7 @@ export default function GraphDetails({
                     </div>
                     {selected_node.effects.some((effect) => !effect.hidden) && (
                         <div className="details-section">
-                            <div className="details-section-title">Effects</div>
+                            <div className="details-section-title">Unlocks and bonuses</div>
                             <ul className="details-effects">
                                 {selected_node.effects.filter((effect) => !effect.hidden).map((effect, index) => (
                                     <li className="details-effect" key={`${effect.type}-${index}`}>
