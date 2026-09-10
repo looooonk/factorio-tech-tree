@@ -481,16 +481,24 @@
     font-size: 9px;
 }
 
-.graph-shortcuts {
+.graph-footer {
     position: absolute;
-    bottom: 70px;
+    bottom: 10px;
     left: 10px;
     z-index: 4;
-    max-width: min(300px, 85vw);
+    display: flex;
+    gap: 8px;
+}
+
+.graph-shortcuts {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     padding: 7px 9px;
     color: var(--muted);
     font-size: 10px;
     line-height: 1.65;
+    white-space: nowrap;
     user-select: none;
 }
 
@@ -516,10 +524,6 @@
 }
 
 .graph-credit {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    z-index: 4;
     max-width: min(300px, 85vw);
     padding: 7px 10px;
     color: var(--muted);
@@ -1042,8 +1046,7 @@
         height: 108px;
     }
 
-    .graph-shortcuts,
-    .graph-credit {
+    .graph-footer {
         display: none;
     }
 }

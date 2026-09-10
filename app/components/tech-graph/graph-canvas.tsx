@@ -439,30 +439,31 @@ export default function GraphCanvas({
                 </div>
             </div>
 
-            <div className="graph-shortcuts" data-no-pan data-no-zoom>
-                <span>
-                    <span className="graph-shortcut-key" aria-hidden="true">⌫</span>
-                    <span className="graph-shortcut-label">previous</span>
-                </span>
-                <br />
-                <span>
-                    <span className="graph-shortcut-key" aria-hidden="true">⏎</span>
-                    <span className="graph-shortcut-label">next</span>
-                </span>
-            </div>
+            <div className="graph-footer" data-no-pan data-no-zoom>
+                <div className="graph-shortcuts">
+                    <span>
+                        <span className="graph-shortcut-key" aria-hidden="true">⌫</span>
+                        <span className="graph-shortcut-label">previous</span>
+                    </span>
+                    <span>
+                        <span className="graph-shortcut-key" aria-hidden="true">⏎</span>
+                        <span className="graph-shortcut-label">next</span>
+                    </span>
+                </div>
 
-            <div className="graph-credit" data-no-pan data-no-zoom>
-                <span>Community tool by Taehoon Hwang.</span>
-                <br />
-                <span>Contribute on </span>
-                <a
-                    href="https://github.com/looooonk/factorio-tech-tree"
-                    target="_blank"
-                    rel="noreferrer"
-                >
-                    GitHub
-                </a>
-                <span>.</span>
+                <div className="graph-credit">
+                    <span>Community tool by Taehoon Hwang.</span>
+                    <br />
+                    <span>Contribute on </span>
+                    <a
+                        href="https://github.com/looooonk/factorio-tech-tree"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        GitHub
+                    </a>
+                    <span>.</span>
+                </div>
             </div>
 
             <div
