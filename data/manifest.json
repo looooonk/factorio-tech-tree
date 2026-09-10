@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "game_version": "2.0.77",
+  "profile": "space-age",
+  "locale": "en",
+  "mods": [
+    {
+      "name": "base",
+      "version": "2.0.77"
+    },
+    {
+      "name": "elevated-rails",
+      "version": "2.0.77"
+    },
+    {
+      "name": "quality",
+      "version": "2.0.77"
+    },
+    {
+      "name": "space-age",
+      "version": "2.0.77"
+    }
+  ],
+  "startup_settings": {},
+  "source_hashes": {
+    "data-raw-dump.json": "6a3fb9737235985204798ce3e46672285f025ded3e8c924c0d01be608842331b",
+    "mod-settings-dump.json": "ddc90d598d1720b207196690c35441caefe32a4e25535edc93a80484c659d69e",
+    "technology-locale.json": "de8ce0fb57ba3710bff83567c5bf69a2ea1f593d8d4fe42b412f4bed37f0080c",
+    "recipe-locale.json": "b3a9a28bf60410a8969448d711b5db9ea1404d5d876f0fae43955aa8b7af1403",
+    "item-locale.json": "c5bf9b21f4a51d9ca4eaf3f3fcc41258bbbb19fdb23c0029aa6a52aa27c73e30",
+    "entity-locale.json": "61ee395846603e3cd47a6ea93b8ddd65d2a75159d4f79744b0b064c27a0d45ee",
+    "fluid-locale.json": "efe49e2f7d759375b0a2aabfc879fef147fe2c676e7cd54d468cee76339dc335",
+    "quality-locale.json": "aa3c623c8aee5fca02c1d76c777d1ca354ff32443d93cfa1619a7ef542767583",
+    "space-location-locale.json": "40a84d579e9e53f1da1922ccf4e682dace8a7397cc400b92e3952b5beae31adf",
+    "ammo-category-locale.json": "0474916380ceacd30774d699437c9e79eddf82815c70aa87ed95a5439b2296f7",
+    "icons": "e4cbd525a99ceac3c7768d834608693cd8531a63b65cce621abb1b1ad365f949"
+  },
+  "technology_count": 275,
+  "locale_description_count": 259,
+  "effect_description_count": 16,
+  "science_packs": [
+    {
+      "id": "automation-science-pack",
+      "name": "Automation science pack",
+      "image_path": "/data/item/automation-science-pack.png",
+      "technology_id": "automation-science-pack",
+      "order": "a[automation-science-pack]"
+    },
+    {
+      "id": "logistic-science-pack",
+      "name": "Logistic science pack",
+      "image_path": "/data/item/logistic-science-pack.png",
+      "technology_id": "logistic-science-pack",
+      "order": "b[logistic-science-pack]"
+    },
+    {
+      "id": "military-science-pack",
+      "name": "Military science pack",
+      "image_path": "/data/item/military-science-pack.png",
+      "technology_id": "military-science-pack",
+      "order": "c[military-science-pack]"
+    },
+    {
+      "id": "chemical-science-pack",
+      "name": "Chemical science pack",
+      "image_path": "/data/item/chemical-science-pack.png",
+      "technology_id": "chemical-science-pack",
+      "order": "d[chemical-science-pack]"
+    },
+    {
+      "id": "production-science-pack",
+      "name": "Production science pack",
+      "image_path": "/data/item/production-science-pack.png",
+      "technology_id": "production-science-pack",
+      "order": "e[production-science-pack]"
+    },
+    {
+      "id": "utility-science-pack",
+      "name": "Utility science pack",
+      "image_path": "/data/item/utility-science-pack.png",
+      "technology_id": "utility-science-pack",
+      "order": "f[utility-science-pack]"
+    },
+    {
+      "id": "space-science-pack",
+      "name": "Space science pack",
+      "image_path": "/data/item/space-science-pack.png",
+      "technology_id": "space-science-pack",
+      "order": "g[space-science-pack]"
+    },
+    {
+      "id": "metallurgic-science-pack",
+      "name": "Metallurgic science pack",
+      "image_path": "/data/item/metallurgic-science-pack.png",
+      "technology_id": "metallurgic-science-pack",
+      "order": "h"
+    },
+    {
+      "id": "agricultural-science-pack",
+      "name": "Agricultural science pack",
+      "image_path": "/data/item/agricultural-science-pack.png",
+      "technology_id": "agricultural-science-pack",
+      "order": "i"
+    },
+    {
+      "id": "electromagnetic-science-pack",
+      "name": "Electromagnetic science pack",
+      "image_path": "/data/item/electromagnetic-science-pack.png",
+      "technology_id": "electromagnetic-science-pack",
+      "order": "j"
+    },
+    {
+      "id": "cryogenic-science-pack",
+      "name": "Cryogenic science pack",
+      "image_path": "/data/item/cryogenic-science-pack.png",
+      "technology_id": "cryogenic-science-pack",
+      "order": "k"
+    },
+    {
+      "id": "promethium-science-pack",
+      "name": "Promethium science pack",
+      "image_path": "/data/item/promethium-science-pack.png",
+      "technology_id": "promethium-science-pack",
+      "order": "l"
+    }
+  ]
+}
