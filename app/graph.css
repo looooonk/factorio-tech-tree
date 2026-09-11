@@ -588,6 +588,8 @@
     top: 0;
     left: 0;
     z-index: 2;
+    /* Keep card paints separate from edges during viewport animations. */
+    will-change: transform;
 }
 
 .graph-node {
