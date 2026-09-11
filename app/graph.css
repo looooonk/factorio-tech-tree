@@ -502,6 +502,11 @@
     user-select: none;
 }
 
+.graph-shortcuts > span {
+    display: inline-flex;
+    align-items: center;
+}
+
 .graph-shortcut-key {
     display: inline-flex;
     min-width: 26px;

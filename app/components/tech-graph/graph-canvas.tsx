@@ -443,11 +443,11 @@ export default function GraphCanvas({
                 <div className="graph-shortcuts">
                     <span>
                         <span className="graph-shortcut-key" aria-hidden="true">⌫</span>
-                        <span className="graph-shortcut-label">previous</span>
+                        <span className="graph-shortcut-label">Previous</span>
                     </span>
                     <span>
                         <span className="graph-shortcut-key" aria-hidden="true">⏎</span>
-                        <span className="graph-shortcut-label">next</span>
+                        <span className="graph-shortcut-label">Next</span>
                     </span>
                 </div>
 
