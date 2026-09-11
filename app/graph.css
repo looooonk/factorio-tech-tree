@@ -1138,6 +1138,14 @@
     line-height: 1.4;
 }
 
+.research-formula sup {
+    position: relative;
+    top: -0.5em;
+    font-size: 0.75em;
+    line-height: 0;
+    vertical-align: baseline;
+}
+
 .details-research-value {
     overflow-wrap: anywhere;
 }

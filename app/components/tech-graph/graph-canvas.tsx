@@ -307,7 +307,7 @@ export default function GraphCanvas({
                     )}
                     {total_requirements.excluded_count > 0 && (
                         <div className="graph-totals-note">
-                            {total_requirements.excluded_count} infinite/unresolved{" "}
+                            {total_requirements.excluded_count} unresolved{" "}
                             {total_requirements.excluded_count === 1 ? "tech" : "techs"} excluded.
                         </div>
                     )}

@@ -1,4 +1,5 @@
 import type { GraphNode, ResearchScience, SciencePack } from "../tech-tree/types";
+import { evaluate_research_formula } from "./research-formula";
 import {
     node_icon_size,
     node_item_gap,
@@ -107,15 +108,17 @@ export function compute_total_requirements(
         const node = nodes_by_id.get(id);
         if (!node || node.research_type !== "science") continue;
         const cost = node.research_science;
-        // Repeatable or formula-based research has no single finite total.
-        if (node.is_infinite || (typeof node.max_research_level === "number" && node.max_research_level > node.research_level) || !cost || cost.count_formula ||
-            cost.unit_count === null || !Number.isFinite(cost.unit_count) || cost.unit_count < 0 ||
+        const unit_count = cost?.count_formula
+            ? evaluate_research_formula(cost.count_formula, node.research_level)
+            : cost?.unit_count;
+        if ((typeof node.max_research_level === "number" && node.max_research_level > node.research_level) || !cost ||
+            unit_count == null || !Number.isFinite(unit_count) || unit_count < 0 ||
             cost.science_packs.some((pack) => !Number.isFinite(pack.amount_per_unit) || pack.amount_per_unit < 0)) {
             excluded_count += 1;
             continue;
         }
         for (const pack of cost.science_packs) {
-            const amount = (totals.get(pack.id)?.amount ?? 0) + cost.unit_count * pack.amount_per_unit;
+            const amount = (totals.get(pack.id)?.amount ?? 0) + unit_count * pack.amount_per_unit;
             totals.set(pack.id, { id: pack.id, name: pack.name, image_path: pack.image_path,
                 technology_id: pack.technology_id, order: pack.order, amount });
         }

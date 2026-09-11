@@ -1,4 +1,5 @@
 import Image from "next/image";
+import ResearchFormula from "./research-formula";
 import type { GraphNode } from "../../lib/tech-tree/types";
 import type { GraphSelection } from "../../lib/tech-graph/types";
 import {
@@ -60,8 +61,9 @@ export default function GraphDetails({
                                     <div className="details-research-metric">
                                         <span className="details-research-label">Unit count</span>
                                         <span className="details-research-value">
-                                            {resolve_unit_text(selected_node.research_science) ??
-                                                "N/A"}
+                                            {selected_node.research_science.count_formula ? (
+                                                <ResearchFormula formula={selected_node.research_science.count_formula} />
+                                            ) : resolve_unit_text(selected_node.research_science) ?? "N/A"}
                                         </span>
                                     </div>
                                     <div className="details-research-metric">

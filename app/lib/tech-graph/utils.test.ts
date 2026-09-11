@@ -35,15 +35,36 @@ test("multiplies native numeric costs and sorts science packs by game order", ()
     });
 });
 
-test("excludes repeatable, finite ranges, and formula costs without losing finite prerequisites", () => {
+test("includes the first infinite level and deduplicated prerequisites with pack multipliers", () => {
+    const infinite = science_node("infinite", {
+        level: 99, research_level: 4, is_infinite: true, max_research_level: "infinite",
+        research_science: { unit_count: null, count_formula: "2^(L-3)*1000", time_seconds: 60,
+            science_packs: [{ ...packs[0], amount_per_unit: 1 }, { ...packs[1], amount_per_unit: 2 }] },
+    });
+    assert.deepEqual(total_requirements([science_node("prerequisite"), infinite], ["prerequisite", "infinite", "prerequisite"]), {
+        pack_totals: [{ ...packs[0], amount: 2010 }, { ...packs[1], amount: 4000 }], excluded_count: 0,
+    });
+});
+
+test("includes fixed infinite costs and resolved formulas while excluding finite ranges and missing costs", () => {
     const formula = { unit_count: null, count_formula: "1000*(L - 2)", time_seconds: 60,
         science_packs: [{ ...packs[0], amount_per_unit: 1 }] };
     const nodes = [science_node("finite"), science_node("infinite", { is_infinite: true, max_research_level: "infinite" }),
         science_node("range", { research_level: 1, max_research_level: 3 }),
-        science_node("formula", { research_science: formula }), science_node("missing", { research_science: null })];
-    assert.equal(total_requirements(nodes).excluded_count, 4);
-    assert.equal(total_requirements(nodes).pack_totals[0].amount, 10);
+        science_node("formula", { research_level: 3, research_science: formula }), science_node("missing", { research_science: null })];
+    assert.equal(total_requirements(nodes).excluded_count, 2);
+    assert.equal(total_requirements(nodes).pack_totals[0].amount, 1020);
     assert.equal(resolve_unit_text(formula), "1000*(L - 2)");
+});
+
+test("excludes unsupported or invalid formulas without losing prerequisite costs", () => {
+    for (const count_formula of ["unknown(L)", "2^(L-3", "L-10", "1/0", "2^10000"]) {
+        const node = science_node("infinite", { research_level: 4, is_infinite: true, max_research_level: "infinite" });
+        node.research_science = { ...node.research_science!, unit_count: null, count_formula };
+        assert.deepEqual(total_requirements([science_node("prerequisite"), node]), {
+            pack_totals: [{ ...packs[0], amount: 10 }], excluded_count: 1,
+        });
+    }
 });
 
 test("excludes invalid quantities and handles empty or trigger selections", () => {
