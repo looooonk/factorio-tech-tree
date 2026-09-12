@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Titillium_Web } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import "./graph.css";
 
@@ -31,6 +32,7 @@ export default function RootLayout({
                 className={`${factorioFont.variable} ${ibmPlexMono.variable} antialiased`}
             >
                 {children}
+                <Analytics />
             </body>
         </html>
     );
