@@ -22,7 +22,7 @@ export default function GraphDetails({
     on_focus_node,
 }: GraphDetailsProps) {
     return (
-        <aside className="graph-details" data-no-pan data-no-zoom>
+        <aside className="graph-details" id="graph-details-panel" aria-label="Technology details" data-no-pan data-no-zoom>
             <div className="details-title">Technology details</div>
             {selection.mode === "none" && (
                 <div className="details-empty">

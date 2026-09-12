@@ -16,3 +16,4 @@ export const node_title_line_height = 37;
 export const node_meta_height = 0;
 export const science_pack_size = 56;
 export const science_pack_gap = 6;
+export const mobile_media_query = "(max-width: 760px), (max-width: 1024px) and (pointer: coarse)";

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import type { Transform } from "../lib/tech-graph/types";
-import { max_zoom, min_zoom, pan_boundary } from "../lib/tech-graph/constants";
+import { max_zoom, min_zoom, mobile_media_query, pan_boundary } from "../lib/tech-graph/constants";
 import { clamp } from "../lib/tech-graph/utils";
 
 type UsePanZoomOptions = {
@@ -31,6 +31,7 @@ type UsePanZoomResult = {
     on_pointer_down: (event: React.PointerEvent<HTMLDivElement>) => void;
     on_pointer_move: (event: React.PointerEvent<HTMLDivElement>) => void;
     on_pointer_up: (event: React.PointerEvent<HTMLDivElement>) => void;
+    on_click_capture: (event: React.MouseEvent<HTMLDivElement>) => void;
 };
 
 function constrain_axis(position: number, content_size: number, viewport_size: number) {
@@ -55,6 +56,8 @@ export function usePanZoom({
     const viewport_size_ref = useRef({ width: 0, height: 0 });
     const pointer_ref = useRef<{ x: number; y: number } | null>(null);
     const dragged_ref = useRef(false);
+    const touches_ref = useRef(new Map<number, { x: number; y: number; start_x: number; start_y: number }>());
+    const touch_dragged_ref = useRef(false);
     const transform_frame_ref = useRef<number | null>(null);
     const focus_animation_ref = useRef<number | null>(null);
     // Stable ref so on_pointer_up doesn't need on_canvas_click in its dep array.
@@ -152,9 +155,29 @@ export function usePanZoom({
 
     useLayoutEffect(() => {
         fit_to_view();
-        window.addEventListener("resize", fit_to_view);
-        return () => window.removeEventListener("resize", fit_to_view);
-    }, [fit_to_view]);
+        const on_resize = () => {
+            if (!window.matchMedia(mobile_media_query).matches) {
+                fit_to_view();
+                return;
+            }
+            const rect = container_ref.current?.getBoundingClientRect();
+            if (!rect || rect.width === 0 || rect.height === 0) return;
+            const previous = viewport_size_ref.current;
+            viewport_size_ref.current = { width: rect.width, height: rect.height };
+            cancel_focus_animation();
+            const current = transform_ref.current;
+            write_transform({ ...current, x: current.x + (rect.width - previous.width) / 2, y: current.y + (rect.height - previous.height) / 2 });
+        };
+        const observer = new ResizeObserver(() => {
+            if (window.matchMedia(mobile_media_query).matches) on_resize();
+        });
+        if (container_ref.current) observer.observe(container_ref.current);
+        window.addEventListener("resize", on_resize);
+        return () => {
+            observer.disconnect();
+            window.removeEventListener("resize", on_resize);
+        };
+    }, [cancel_focus_animation, fit_to_view, write_transform]);
 
     const animate_to = useCallback(
         (center_x: number, center_y: number) => {
@@ -228,6 +251,17 @@ export function usePanZoom({
         (event: React.PointerEvent<HTMLDivElement>) => {
             if (event.button !== 0) return;
             const target = event.target as HTMLElement;
+            if (touches_ref.current.size === 0) touch_dragged_ref.current = false;
+            if (event.pointerType === "touch") {
+                if (target.closest("[data-no-zoom]")) return;
+                cancel_focus_animation();
+                const touch = { x: event.clientX, y: event.clientY, start_x: event.clientX, start_y: event.clientY };
+                touches_ref.current.set(event.pointerId, touch);
+                if (touches_ref.current.size > 1) touch_dragged_ref.current = true;
+                // Keep taps targeted at the node while retaining drags outside its bounds.
+                (target.closest(".graph-node") ?? event.currentTarget).setPointerCapture(event.pointerId);
+                return;
+            }
             if (target.closest("[data-no-pan]")) return;
             event.preventDefault();
             cancel_focus_animation();
@@ -241,6 +275,37 @@ export function usePanZoom({
 
     const on_pointer_move = useCallback(
         (event: React.PointerEvent<HTMLDivElement>) => {
+            const touches = touches_ref.current;
+            const touch = touches.get(event.pointerId);
+            if (touch) {
+                const previous = [...touches.values()];
+                touches.set(event.pointerId, { ...touch, x: event.clientX, y: event.clientY });
+                if (Math.hypot(event.clientX - touch.start_x, event.clientY - touch.start_y) > 6) {
+                    touch_dragged_ref.current = true;
+                }
+                if (!touch_dragged_ref.current) return;
+                event.currentTarget.classList.add("is-panning");
+                const current = transform_ref.current;
+                if (touches.size === 1) {
+                    schedule_transform({ ...current, x: current.x + event.clientX - touch.x, y: current.y + event.clientY - touch.y });
+                } else {
+                    const [before_a, before_b] = previous;
+                    const [after_a, after_b] = [...touches.values()];
+                    const before_distance = Math.hypot(before_a.x - before_b.x, before_a.y - before_b.y);
+                    const after_distance = Math.hypot(after_a.x - after_b.x, after_a.y - after_b.y);
+                    const scale = clamp(current.scale * after_distance / Math.max(1, before_distance), min_zoom, max_zoom);
+                    const ratio = scale / current.scale;
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const anchor_x = (before_a.x + before_b.x) / 2 - rect.left;
+                    const anchor_y = (before_a.y + before_b.y) / 2 - rect.top;
+                    schedule_transform({
+                        scale,
+                        x: (after_a.x + after_b.x) / 2 - rect.left - (anchor_x - current.x) * ratio,
+                        y: (after_a.y + after_b.y) / 2 - rect.top - (anchor_y - current.y) * ratio,
+                    });
+                }
+                return;
+            }
             if (!pointer_ref.current) return;
             const dx = event.clientX - pointer_ref.current.x;
             const dy = event.clientY - pointer_ref.current.y;
@@ -255,14 +320,33 @@ export function usePanZoom({
     );
 
     const on_pointer_up = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+        if (touches_ref.current.delete(event.pointerId)) {
+            if (event.type === "pointercancel" || event.type === "lostpointercapture") touch_dragged_ref.current = true;
+            if (touches_ref.current.size === 0) {
+                event.currentTarget.classList.remove("is-panning");
+                if (!touch_dragged_ref.current && !(event.target as HTMLElement).closest(".graph-node")) {
+                    on_canvas_click_ref.current?.();
+                }
+            }
+            return;
+        }
         if (!pointer_ref.current) return;
-        event.currentTarget.releasePointerCapture(event.pointerId);
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
         event.currentTarget.classList.remove("is-panning");
         const was_dragging = dragged_ref.current;
         pointer_ref.current = null;
         dragged_ref.current = false;
-        if (!was_dragging) {
+        if (!was_dragging && event.type === "pointerup") {
             on_canvas_click_ref.current?.();
+        }
+    }, []);
+
+    const on_click_capture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+        if (touch_dragged_ref.current && event.detail !== 0 && !(event.target as HTMLElement).closest("[data-no-zoom]")) {
+            event.preventDefault();
+            event.stopPropagation();
         }
     }, []);
 
@@ -284,5 +368,6 @@ export function usePanZoom({
         on_pointer_down,
         on_pointer_move,
         on_pointer_up,
+        on_click_capture,
     };
 }

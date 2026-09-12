@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import type { CSSProperties, PointerEvent, RefObject } from "react";
+import type { CSSProperties, MouseEvent, PointerEvent, RefObject } from "react";
 import Image from "next/image";
 import { FaTools } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -10,7 +10,7 @@ import type { GraphNode } from "../../lib/tech-tree/types";
 import type { Layout } from "../../lib/tech-graph/graph-layout";
 import type { GraphEdgePath } from "../../lib/tech-graph/types";
 import type { TotalRequirements } from "../../lib/tech-graph/utils";
-import { node_width, science_pack_size, science_pack_gap } from "../../lib/tech-graph/constants";
+import { mobile_media_query, node_width, science_pack_size, science_pack_gap } from "../../lib/tech-graph/constants";
 import {
     format_title,
     get_node_height,
@@ -48,6 +48,7 @@ type GraphCanvasProps = {
     on_pointer_down: (event: PointerEvent<HTMLDivElement>) => void;
     on_pointer_move: (event: PointerEvent<HTMLDivElement>) => void;
     on_pointer_up: (event: PointerEvent<HTMLDivElement>) => void;
+    on_click_capture: (event: MouseEvent<HTMLDivElement>) => void;
     on_zoom_in: () => void;
     on_zoom_out: () => void;
     on_reset: () => void;
@@ -60,6 +61,7 @@ type GraphCanvasProps = {
     details_visible: boolean;
     on_toggle_totals: () => void;
     on_toggle_details: () => void;
+    on_navigate_history: (direction: "back" | "forward") => void;
 };
 
 // --- Sub-components ---
@@ -199,6 +201,7 @@ export default function GraphCanvas({
     on_pointer_down,
     on_pointer_move,
     on_pointer_up,
+    on_click_capture,
     on_zoom_in,
     on_zoom_out,
     on_reset,
@@ -211,6 +214,7 @@ export default function GraphCanvas({
     details_visible,
     on_toggle_totals,
     on_toggle_details,
+    on_navigate_history,
 }: GraphCanvasProps) {
     const misc_active = active_filters.has("misc");
     const edge_path = useMemo(() => edges.map((edge) => edge.path).join(" "), [edges]);
@@ -230,7 +234,10 @@ export default function GraphCanvas({
             onPointerMove={on_pointer_move}
             onPointerUp={on_pointer_up}
             onPointerCancel={on_pointer_up}
+            onLostPointerCapture={on_pointer_up}
+            onClickCapture={on_click_capture}
         >
+            <div className="graph-touch-surface" aria-hidden="true" />
             <div className="graph-titlebar" data-no-pan data-no-zoom>
                 <div className="graph-titlebar-name">
                     <span className="graph-titlebar-light" aria-hidden />
@@ -239,82 +246,89 @@ export default function GraphCanvas({
                 <span className="graph-data-version">Space Age · {game_version}</span>
             </div>
 
-            <div className="graph-toolbar-group" data-no-pan data-no-zoom>
-                <div className="graph-panel-title">View controls</div>
-                <div className="graph-toolbar" data-no-pan>
-                    <button type="button" onClick={on_zoom_in}>
-                        Zoom in
-                    </button>
-                    <button type="button" onClick={on_zoom_out}>
-                        Zoom out
-                    </button>
-                    <button type="button" onClick={on_reset}>
-                        Reset
-                    </button>
+            <div className="graph-view-panel" id="graph-view-panel" data-no-pan data-no-zoom>
+                <div className="graph-toolbar-group" data-no-pan data-no-zoom>
+                    <div className="graph-panel-title">View controls</div>
+                    <div className="graph-toolbar" data-no-pan>
+                        <button type="button" onClick={on_zoom_in}>
+                            Zoom in
+                        </button>
+                        <button type="button" onClick={on_zoom_out}>
+                            Zoom out
+                        </button>
+                        <button type="button" onClick={on_reset}>
+                            Reset
+                        </button>
+                    </div>
+                    <DepthToggle mode={depth_mode} on_change={on_change_depth_mode} />
+                    <div className="graph-mobile-history">
+                        <button type="button" className="graph-filter-action" onClick={() => on_navigate_history("back")}>Previous</button>
+                        <button type="button" className="graph-filter-action" onClick={() => on_navigate_history("forward")}>Next</button>
+                    </div>
+                    <div className="graph-panel-toggles" role="group" aria-label="Panel visibility">
+                        <button
+                            type="button"
+                            className="graph-filter-action"
+                            aria-label="Total requirements panel"
+                            aria-pressed={totals_visible}
+                            title={`${totals_visible ? "Hide" : "Show"} total requirements`}
+                            onClick={on_toggle_totals}
+                        >
+                            {totals_visible ? <FiEye aria-hidden /> : <FiEyeOff aria-hidden />}
+                            Totals
+                        </button>
+                        <button
+                            type="button"
+                            className="graph-filter-action"
+                            aria-label="Technology details panel"
+                            aria-pressed={details_visible}
+                            title={`${details_visible ? "Hide" : "Show"} technology details`}
+                            onClick={on_toggle_details}
+                        >
+                            {details_visible ? <FiEye aria-hidden /> : <FiEyeOff aria-hidden />}
+                            Details
+                        </button>
+                    </div>
                 </div>
-                <DepthToggle mode={depth_mode} on_change={on_change_depth_mode} />
-                <div className="graph-panel-toggles" role="group" aria-label="Panel visibility">
-                    <button
-                        type="button"
-                        className="graph-filter-action"
-                        aria-label="Total requirements panel"
-                        aria-pressed={totals_visible}
-                        title={`${totals_visible ? "Hide" : "Show"} total requirements`}
-                        onClick={on_toggle_totals}
-                    >
-                        {totals_visible ? <FiEye aria-hidden /> : <FiEyeOff aria-hidden />}
-                        Totals
-                    </button>
-                    <button
-                        type="button"
-                        className="graph-filter-action"
-                        aria-label="Technology details panel"
-                        aria-pressed={details_visible}
-                        title={`${details_visible ? "Hide" : "Show"} technology details`}
-                        onClick={on_toggle_details}
-                    >
-                        {details_visible ? <FiEye aria-hidden /> : <FiEyeOff aria-hidden />}
-                        Details
-                    </button>
-                </div>
+
+                {total_requirements && (
+                    <section className="graph-totals-panel" aria-label="Total requirements" data-no-pan data-no-zoom>
+                        <div className="graph-panel-title">Total requirements</div>
+                        {total_requirements.pack_totals.length === 0 ? (
+                            <div className="graph-totals-empty">No science pack requirements.</div>
+                        ) : (
+                            <div className="graph-totals-list">
+                                {total_requirements.pack_totals.map((pack) => (
+                                    <div key={pack.id} className="graph-totals-item" title={pack.name}>
+                                        <Image
+                                            src={pack.image_path}
+                                            alt={pack.name}
+                                            width={32}
+                                            height={32}
+                                            unoptimized
+                                            loading="lazy"
+                                            decoding="async"
+                                            draggable={false}
+                                        />
+                                        <span className="graph-totals-count">
+                                            {Math.round(pack.amount).toLocaleString()}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {total_requirements.excluded_count > 0 && (
+                            <div className="graph-totals-note">
+                                {total_requirements.excluded_count} unresolved{" "}
+                                {total_requirements.excluded_count === 1 ? "tech" : "techs"} excluded.
+                            </div>
+                        )}
+                    </section>
+                )}
+                <p className="graph-mobile-hint">Drag to pan. Pinch to zoom. Select a technology and enable all required research to see totals.</p>
             </div>
 
-            {total_requirements && (
-                <section className="graph-totals-panel" aria-label="Total requirements" data-no-pan data-no-zoom>
-                    <div className="graph-panel-title">Total requirements</div>
-                    {total_requirements.pack_totals.length === 0 ? (
-                        <div className="graph-totals-empty">No science pack requirements.</div>
-                    ) : (
-                        <div className="graph-totals-list">
-                            {total_requirements.pack_totals.map((pack) => (
-                                <div key={pack.id} className="graph-totals-item" title={pack.name}>
-                                    <Image
-                                        src={pack.image_path}
-                                        alt={pack.name}
-                                        width={32}
-                                        height={32}
-                                        unoptimized
-                                        loading="lazy"
-                                        decoding="async"
-                                        draggable={false}
-                                    />
-                                    <span className="graph-totals-count">
-                                        {Math.round(pack.amount).toLocaleString()}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                    {total_requirements.excluded_count > 0 && (
-                        <div className="graph-totals-note">
-                            {total_requirements.excluded_count} unresolved{" "}
-                            {total_requirements.excluded_count === 1 ? "tech" : "techs"} excluded.
-                        </div>
-                    )}
-                </section>
-            )}
-
-            <div className="graph-filter-stack" data-no-pan data-no-zoom>
+            <div className="graph-filter-stack" id="graph-search-panel" data-no-pan data-no-zoom>
                 <div className="graph-filter-panel" data-no-pan data-no-zoom>
                     <div className="graph-panel-heading">
                         <div className="graph-panel-title">Research filters</div>
@@ -392,6 +406,7 @@ export default function GraphCanvas({
                             type="search"
                             value={search_query}
                             placeholder="Search technology"
+                            aria-label="Search technology"
                             className="graph-filter-input"
                             data-no-pan
                             data-no-zoom
@@ -413,6 +428,9 @@ export default function GraphCanvas({
                                         onClick={(event) => {
                                             event.stopPropagation();
                                             on_focus_node(node.id);
+                                            if (window.matchMedia(mobile_media_query).matches) {
+                                                event.currentTarget.closest(".graph-search-panel")?.querySelector("input")?.blur();
+                                            }
                                         }}
                                     >
                                         <span className="graph-filter-result-icon">

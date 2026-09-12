@@ -57,6 +57,7 @@ export default function TechGraph({ nodes, edges, root_ids, science_packs, game_
     const [selected_node_id, set_selected_node_id] = useState<string | null>(null);
     const [totals_visible, set_totals_visible] = useState(true);
     const [details_visible, set_details_visible] = useState(true);
+    const [mobile_panel, set_mobile_panel] = useState<"search" | "view" | "details" | null>(null);
 
     const toggle_totals = useCallback(() => set_totals_visible((visible) => !visible), []);
     const toggle_details = useCallback(() => set_details_visible((visible) => !visible), []);
@@ -100,6 +101,7 @@ export default function TechGraph({ nodes, edges, root_ids, science_packs, game_
         on_pointer_down,
         on_pointer_move,
         on_pointer_up,
+        on_click_capture,
     } = usePanZoom({
         get_layout_size,
         on_canvas_click: () => set_selected_node_id(null),
@@ -112,7 +114,7 @@ export default function TechGraph({ nodes, edges, root_ids, science_packs, game_
     // ref, so it doesn't need focus_node in its closure at declaration time.
     const focus_node_ref = useRef<((node_id: string, opts?: { record_history?: boolean }) => void) | null>(null);
 
-    const { record_history } = useHistoryNavigation({
+    const { record_history, navigate_history } = useHistoryNavigation({
         on_navigate: (node_id) => focus_node_ref.current?.(node_id, { record_history: false }),
     });
 
@@ -122,6 +124,7 @@ export default function TechGraph({ nodes, edges, root_ids, science_packs, game_
                 record_history(node_id);
             }
             set_selected_node_id(node_id);
+            set_mobile_panel(null);
             const position = layout.positions[node_id];
             const size = layout.sizes[node_id];
             if (!position || !size) return;
@@ -138,6 +141,7 @@ export default function TechGraph({ nodes, edges, root_ids, science_packs, game_
         (node_id: string) => {
             record_history(node_id);
             set_selected_node_id(node_id);
+            set_mobile_panel("details");
         },
         [record_history],
     );
@@ -335,7 +339,7 @@ export default function TechGraph({ nodes, edges, root_ids, science_packs, game_
     // --- Render ---
 
     return (
-        <section className="graph-shell">
+        <section className="graph-shell" data-mobile-panel={mobile_panel} data-details-visible={details_visible}>
             <GraphCanvas
                 game_version={game_version}
                 container_ref={container_ref}
@@ -360,6 +364,7 @@ export default function TechGraph({ nodes, edges, root_ids, science_packs, game_
                 on_pointer_down={on_pointer_down}
                 on_pointer_move={on_pointer_move}
                 on_pointer_up={on_pointer_up}
+                on_click_capture={on_click_capture}
                 on_zoom_in={on_zoom_in}
                 on_zoom_out={on_zoom_out}
                 on_reset={fit_to_view}
@@ -372,14 +377,29 @@ export default function TechGraph({ nodes, edges, root_ids, science_packs, game_
                 details_visible={details_visible}
                 on_toggle_totals={toggle_totals}
                 on_toggle_details={toggle_details}
+                on_navigate_history={navigate_history}
             />
-            {details_visible && (
+            {(details_visible || mobile_panel === "details") && (
                 <GraphDetails
                     selection={selection}
                     selected_node={selected_node}
                     on_focus_node={focus_node}
                 />
             )}
+            <nav className="graph-mobile-nav" aria-label="Graph panels">
+                {(["search", "view", "details"] as const).map((panel) => (
+                    <button
+                        key={panel}
+                        type="button"
+                        className="graph-filter-action"
+                        aria-expanded={mobile_panel === panel}
+                        aria-controls={`graph-${panel}-panel`}
+                        onClick={() => set_mobile_panel((current) => current === panel ? null : panel)}
+                    >
+                        {mobile_panel === panel ? "Close" : panel === "search" ? "Search & filters" : panel === "view" ? "View & totals" : "Details"}
+                    </button>
+                ))}
+            </nav>
         </section>
     );
 }
