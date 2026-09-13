@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
 
 import GraphCanvas from "./components/tech-graph/graph-canvas";
 import GraphDetails from "./components/tech-graph/graph-details";
 import type { GraphEdge, GraphNode, SciencePack } from "./lib/tech-tree/types";
+import type { GameProfile } from "./lib/tech-tree/profiles";
 import { build_layout } from "./lib/tech-graph/graph-layout";
 import { node_width } from "./lib/tech-graph/constants";
 import { compute_total_requirements } from "./lib/tech-graph/utils";
@@ -25,6 +27,9 @@ type GraphViewProps = {
     root_ids: string[];
     science_packs: SciencePack[];
     game_version: string;
+    profile: GameProfile;
+    profile_button_ref: RefObject<HTMLButtonElement | null>;
+    on_profile_change: (profile: GameProfile) => void;
 };
 
 // --- Helper: build edge adjacency index ---
@@ -49,7 +54,7 @@ function build_edge_index(edges: GraphEdge[]): EdgeIndex {
 
 // --- Component ---
 
-export default function TechGraph({ nodes, edges, root_ids, science_packs, game_version }: GraphViewProps) {
+export default function TechGraph({ nodes, edges, root_ids, science_packs, game_version, profile, profile_button_ref, on_profile_change }: GraphViewProps) {
     const science_filter_options = useMemo(() => science_packs.map((pack) => ({
         id: pack.id, label: pack.name, icon_path: pack.image_path,
     })), [science_packs]);
@@ -342,6 +347,9 @@ export default function TechGraph({ nodes, edges, root_ids, science_packs, game_
         <section className="graph-shell" data-mobile-panel={mobile_panel} data-details-visible={details_visible}>
             <GraphCanvas
                 game_version={game_version}
+                profile={profile}
+                profile_button_ref={profile_button_ref}
+                on_profile_change={on_profile_change}
                 container_ref={container_ref}
                 viewport_ref={viewport_ref}
                 layout={layout}

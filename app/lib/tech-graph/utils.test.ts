@@ -4,9 +4,9 @@ import fs from "node:fs";
 import type { GraphNode, SciencePack } from "../tech-tree/types";
 import { compute_total_requirements, resolve_unit_text } from "./utils";
 
-const manifest = JSON.parse(fs.readFileSync(new URL("../../../data/manifest.json", import.meta.url), "utf8"));
+const manifest = JSON.parse(fs.readFileSync(new URL("../../../data/space-age/manifest.json", import.meta.url), "utf8"));
 const packs: SciencePack[] = manifest.science_packs;
-const automation = JSON.parse(fs.readFileSync(new URL("../../../data/tech_tree.jsonl", import.meta.url), "utf8")
+const automation = JSON.parse(fs.readFileSync(new URL("../../../data/space-age/tech_tree.jsonl", import.meta.url), "utf8")
     .split("\n").find((line) => line && JSON.parse(line).id === "automation")!);
 
 function science_node(id: string, overrides: Partial<GraphNode> = {}): GraphNode {

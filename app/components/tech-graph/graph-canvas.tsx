@@ -7,6 +7,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import DepthToggle from "../depth-toggle";
 import type { DepthMode } from "../depth-toggle";
 import type { GraphNode } from "../../lib/tech-tree/types";
+import { game_profiles, type GameProfile } from "../../lib/tech-tree/profiles";
 import type { Layout } from "../../lib/tech-graph/graph-layout";
 import type { GraphEdgePath } from "../../lib/tech-graph/types";
 import type { TotalRequirements } from "../../lib/tech-graph/utils";
@@ -22,6 +23,9 @@ import {
 
 type GraphCanvasProps = {
     game_version: string;
+    profile: GameProfile;
+    profile_button_ref: RefObject<HTMLButtonElement | null>;
+    on_profile_change: (profile: GameProfile) => void;
     container_ref: RefObject<HTMLDivElement | null>;
     viewport_ref: RefObject<HTMLDivElement | null>;
     layout: Layout;
@@ -179,6 +183,9 @@ const GraphNodeButton = memo(function GraphNodeButton({
 
 export default function GraphCanvas({
     game_version,
+    profile,
+    profile_button_ref,
+    on_profile_change,
     container_ref,
     viewport_ref,
     layout,
@@ -243,7 +250,22 @@ export default function GraphCanvas({
                     <span className="graph-titlebar-light" aria-hidden />
                     Factorio Technology Tree
                 </div>
-                <span className="graph-data-version">Space Age · {game_version}</span>
+                <div className="graph-titlebar-options">
+                    <span className="graph-data-version">{game_version}</span>
+                    <div className="graph-profile-toggle" role="group" aria-label="Game edition" onKeyDown={(event) => event.stopPropagation()}>
+                        {(["space-age", "base"] as const).map((option) => (
+                            <button
+                                key={option}
+                                ref={option === profile ? profile_button_ref : undefined}
+                                type="button"
+                                aria-pressed={option === profile}
+                                onClick={() => on_profile_change(option)}
+                            >
+                                {game_profiles[option].label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             <div className="graph-view-panel" id="graph-view-panel" data-no-pan data-no-zoom>

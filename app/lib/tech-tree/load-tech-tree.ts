@@ -2,10 +2,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import type { DataManifest, GraphNode, TechNode, TechTreeData } from "./types";
-import { validate_nodes } from "./validate";
+import { validate_manifest, validate_nodes } from "./validate";
+import { parse_game_profile, type GameProfile } from "./profiles";
 
-export function build_graph(nodes: TechNode[]): Omit<TechTreeData, "manifest"> {
-    validate_nodes(nodes);
+export function build_graph(nodes: TechNode[], profile?: GameProfile): Omit<TechTreeData, "manifest"> {
+    validate_nodes(nodes, profile);
     const visible = nodes.filter((node) => !node.hidden && (node.enabled || node.visible_when_disabled));
     const ids = new Set(visible.map((node) => node.id));
     const levels = new Map<string, number>();
@@ -35,16 +36,14 @@ export function build_graph(nodes: TechNode[]): Omit<TechTreeData, "manifest"> {
     };
 }
 
-export default async function loadTechTree(): Promise<TechTreeData> {
+export default async function loadTechTree(profile: GameProfile = "space-age"): Promise<TechTreeData> {
+    const directory = path.join(process.cwd(), "data", parse_game_profile(profile));
     const [raw, manifest_text] = await Promise.all([
-        fs.readFile(path.join(process.cwd(), "data", "tech_tree.jsonl"), "utf8"),
-        fs.readFile(path.join(process.cwd(), "data", "manifest.json"), "utf8"),
+        fs.readFile(path.join(directory, "tech_tree.jsonl"), "utf8"),
+        fs.readFile(path.join(directory, "manifest.json"), "utf8"),
     ]);
     const nodes: TechNode[] = raw.split("\n").filter((line) => line.trim()).map((line) => JSON.parse(line));
     const manifest: DataManifest = JSON.parse(manifest_text);
-    if (manifest.schema_version !== 1 || manifest.locale !== "en" || manifest.profile !== "space-age" ||
-        manifest.technology_count !== nodes.length) {
-        throw new Error("Invalid game data manifest. Regenerate with npm run data:generate.");
-    }
-    return { ...build_graph(nodes), manifest };
+    validate_manifest(manifest, nodes, profile);
+    return { ...build_graph(nodes, profile), manifest };
 }

@@ -1,3 +1,5 @@
+import type { GameProfile } from "./profiles";
+
 export type SciencePack = {
     id: string;
     name: string;
@@ -71,7 +73,7 @@ export type GraphEdge = {
 export type DataManifest = {
     schema_version: 1;
     game_version: string;
-    profile: "space-age";
+    profile: GameProfile;
     locale: "en";
     mods: { name: string; version: string }[];
     startup_settings: Record<string, never>;

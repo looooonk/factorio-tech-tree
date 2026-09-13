@@ -34,7 +34,7 @@ function fixture(): { raw: RawData; locales: Locales } {
 
 test("normalizes native IDs, default trigger counts, markup, effects, and explicit infinite research", () => {
     const { raw, locales } = fixture();
-    const { nodes } = normalize_data(raw, locales);
+    const { nodes } = normalize_data(raw, locales, "space-age");
     const pack = nodes.find((node) => node.id === "automation-science-pack")!;
     assert.equal(pack.description, "Craft Automation science pack in a Assembling machine 1.\nResearch on Nauvis.");
     assert.equal(pack.research_condition_text, "Craft 1 × Lab.");
@@ -50,7 +50,7 @@ test("normalizes native IDs, default trigger counts, markup, effects, and explic
     assert.equal(infinite.research_family, "mining-productivity");
     assert.equal(infinite.description, "Mining productivity: +10%.");
     assert(!infinite.prerequisites.includes(infinite.id));
-    assert.deepEqual(normalize_data(raw, locales), normalize_data(raw, locales));
+    assert.deepEqual(normalize_data(raw, locales, "space-age"), normalize_data(raw, locales, "space-age"));
 });
 
 test("fails on missing references, unknown effects, and conflicting research definitions", () => {
@@ -63,9 +63,31 @@ test("fails on missing references, unknown effects, and conflicting research def
     ]) {
         const { raw, locales } = fixture();
         mutate(raw);
-        assert.throws(() => normalize_data(raw, locales));
+        assert.throws(() => normalize_data(raw, locales, "space-age"));
     }
     const { raw, locales } = fixture();
     delete locales.recipe.names["assembling-machine-1"];
-    assert.throws(() => normalize_data(raw, locales), /localization/);
+    assert.throws(() => normalize_data(raw, locales, "space-age"), /localization/);
+});
+
+test("normalizes base satellite research and empty effects without expansion locales", () => {
+    const { raw, locales } = fixture();
+    locales.item.names.satellite = "Satellite";
+    locales.technology.names["space-science-pack"] = "Space science pack";
+    locales.technology.descriptions["space-science-pack"] = "Launch satellites to obtain science.";
+    raw.technology["space-science-pack"] = {
+        type: "technology", name: "space-science-pack", prerequisites: ["automation"],
+        research_trigger: { type: "send-item-to-orbit", item: "satellite" }, effects: {},
+    };
+    const { nodes, science_packs } = normalize_data(raw, locales, "base");
+    const space_science = nodes.find((node) => node.id === "space-science-pack")!;
+    assert.equal(space_science.research_condition_text, "Send 1 × Satellite to orbit.");
+    assert.deepEqual(space_science.effects, []);
+    assert(nodes.every((node) => node.image_path.startsWith("/data/base/technology/")));
+    assert(science_packs.every((pack) => pack.image_path.startsWith("/data/base/item/")));
+    assert.equal(nodes.find((node) => node.id === "automation")!.effects[0].image_path, "/data/base/recipe/assembling-machine-1.png");
+    for (const invalid of [{ malformed: true }, true, 10, "bad"]) {
+        raw.technology["space-science-pack"].effects = invalid as never;
+        assert.throws(() => normalize_data(raw, locales, "base"), /Invalid research effects/);
+    }
 });

@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "game_version": "2.0.77",
+  "profile": "base",
+  "locale": "en",
+  "mods": [
+    {
+      "name": "base",
+      "version": "2.0.77"
+    }
+  ],
+  "startup_settings": {},
+  "source_hashes": {
+    "data-raw-dump.json": "be65dc3615d5939e522b00543b2925a02cfa890dbc9c00882dfe1c4629670f60",
+    "mod-settings-dump.json": "ddc90d598d1720b207196690c35441caefe32a4e25535edc93a80484c659d69e",
+    "technology-locale.json": "848ab5ee7ed9c4341cdddd0cee69bc3eebdecfb46cdfcbbc1d998ce88e9afdde",
+    "recipe-locale.json": "12bf73895074a9cb1c651b1201ad73b46c5859e9ed445fbbc310fa6bbae38ff7",
+    "item-locale.json": "65f6527bd2e9296318b8c7a72f411d1d111324885bbc363755f17af2247b08cd",
+    "entity-locale.json": "1a3286e57a12d1622181e1531e9d264cb5a08d5a6ad3f4250c6f97b316509f11",
+    "fluid-locale.json": "2fa7bd2572aa289395a912338d884bbfb30f5561d1e0be861b103b2989038647",
+    "quality-locale.json": "622acff6c9338a53105eaa543dfa13f05c880fb3e09e616b3b4d9c14487996f1",
+    "space-location-locale.json": "c18b7b7ea8c357892ad50d7268dd256c1c0ffc473da18e471413d802dd073292",
+    "ammo-category-locale.json": "29632d5dacf3c90fecd8c8851c7020e8b505a8816685797f4b867257f111b52c",
+    "icons": "11693eee7b9384116d6b9e18ac20df8b4d3994efcdc71daac9363f345c6002e0"
+  },
+  "technology_count": 196,
+  "locale_description_count": 193,
+  "effect_description_count": 3,
+  "science_packs": [
+    {
+      "id": "automation-science-pack",
+      "name": "Automation science pack",
+      "image_path": "/data/base/item/automation-science-pack.png",
+      "technology_id": "automation-science-pack",
+      "order": "a[automation-science-pack]"
+    },
+    {
+      "id": "logistic-science-pack",
+      "name": "Logistic science pack",
+      "image_path": "/data/base/item/logistic-science-pack.png",
+      "technology_id": "logistic-science-pack",
+      "order": "b[logistic-science-pack]"
+    },
+    {
+      "id": "military-science-pack",
+      "name": "Military science pack",
+      "image_path": "/data/base/item/military-science-pack.png",
+      "technology_id": "military-science-pack",
+      "order": "c[military-science-pack]"
+    },
+    {
+      "id": "chemical-science-pack",
+      "name": "Chemical science pack",
+      "image_path": "/data/base/item/chemical-science-pack.png",
+      "technology_id": "chemical-science-pack",
+      "order": "d[chemical-science-pack]"
+    },
+    {
+      "id": "production-science-pack",
+      "name": "Production science pack",
+      "image_path": "/data/base/item/production-science-pack.png",
+      "technology_id": "production-science-pack",
+      "order": "e[production-science-pack]"
+    },
+    {
+      "id": "utility-science-pack",
+      "name": "Utility science pack",
+      "image_path": "/data/base/item/utility-science-pack.png",
+      "technology_id": "utility-science-pack",
+      "order": "f[utility-science-pack]"
+    },
+    {
+      "id": "space-science-pack",
+      "name": "Space science pack",
+      "image_path": "/data/base/item/space-science-pack.png",
+      "technology_id": "space-science-pack",
+      "order": "g[space-science-pack]"
+    }
+  ]
+}

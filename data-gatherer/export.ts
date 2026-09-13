@@ -3,8 +3,8 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { DataManifest } from "../app/lib/tech-tree/types";
+import { game_profiles, parse_game_profile, type GameProfile } from "../app/lib/tech-tree/profiles";
 
-export const profile_mods = ["base", "elevated-rails", "quality", "space-age"];
 export const locale_kinds = ["technology", "recipe", "item", "entity", "fluid", "quality", "space-location", "ammo-category"];
 export type ExportSource = Pick<DataManifest, "game_version" | "profile" | "locale" | "mods" | "startup_settings" | "source_hashes">;
 
@@ -17,15 +17,18 @@ export async function export_hashes(output: string) {
     return Object.fromEntries(await Promise.all(names.map(async (name) => [name, sha256(await fs.readFile(path.join(output, name)))])));
 }
 
-export async function export_game(binary: string, cache: string, reuse: boolean): Promise<ExportSource> {
+export async function export_game(binary: string, cache: string, reuse: boolean, profile: GameProfile): Promise<ExportSource> {
+    const profile_mods = game_profiles[parse_game_profile(profile)].mods;
     const output = path.join(cache, "user-data", "script-output");
     const source_path = path.join(cache, "source.json");
     if (reuse) {
         const source: ExportSource = JSON.parse(await fs.readFile(source_path, "utf8"));
-        if (source.profile !== "space-age" || source.locale !== "en" ||
+        if (source.profile !== profile || source.locale !== "en" ||
             source.mods.map((mod) => mod.name).join() !== profile_mods.join() ||
+            source.mods.some((mod) => mod.version !== source.game_version) ||
+            Object.keys(source.startup_settings).length ||
             JSON.stringify(source.source_hashes) !== JSON.stringify(await export_hashes(output))) {
-            throw new Error("Cached exports do not match the English Space Age profile. Run without --reuse-exports.");
+            throw new Error(`Cached exports do not match the English ${profile} profile. Run without --reuse-exports.`);
         }
         return source;
     }
@@ -39,11 +42,11 @@ export async function export_game(binary: string, cache: string, reuse: boolean)
     const version = spawnSync(binary, ["--version"], { encoding: "utf8", timeout: 10_000 });
     const game_version = /Version: (\d+\.\d+\.\d+)/.exec(version.stdout ?? "")?.[1];
     if (version.status !== 0 || !game_version || mods.some((mod) => mod.version !== game_version)) {
-        throw new Error("The executable and bundled Space Age data must have matching versions.");
+        throw new Error(`The executable and bundled ${profile} data must have matching versions.`);
     }
     await fs.mkdir(path.join(cache, "mods"), { recursive: true });
     await fs.writeFile(path.join(cache, "mods", "mod-list.json"), JSON.stringify({
-        mods: profile_mods.map((name) => ({ name, enabled: true })),
+        mods: game_profiles["space-age"].mods.map((name) => ({ name, enabled: profile_mods.includes(name) })),
     }, null, 2) + "\n");
     await fs.rm(path.join(cache, "mods", "mod-settings.dat"), { force: true });
     const config_path = path.join(cache, "config.ini");
@@ -57,7 +60,7 @@ export async function export_game(binary: string, cache: string, reuse: boolean)
     await fs.rm(source_path, { force: true });
     await fs.rm(output, { recursive: true, force: true });
     for (const flag of ["dump-data", "dump-prototype-locale", "dump-icon-sprites"]) {
-        console.log(`Factorio ${game_version}: ${flag}`);
+        console.log(`Factorio ${game_version} (${profile}): ${flag}`);
         const result = spawnSync(binary, [
             "--config", config_path, "--mod-directory", path.join(cache, "mods"),
             "--disable-audio", `--${flag}`,
@@ -68,13 +71,13 @@ export async function export_game(binary: string, cache: string, reuse: boolean)
         }
         const loaded_mods = [...result.stdout.matchAll(/Loading mod ([\w-]+) [\d.]+ \(data.lua\)/g)].map((match) => match[1]);
         if (loaded_mods.join() !== ["core", ...profile_mods].join()) {
-            throw new Error(`${flag} did not load exactly the bundled Space Age profile. See its export log.`);
+            throw new Error(`${flag} did not load exactly the bundled ${profile} profile. See its export log.`);
         }
     }
     const startup_settings = JSON.parse(await fs.readFile(path.join(output, "mod-settings-dump.json"), "utf8"));
     if (Object.keys(startup_settings).length) throw new Error("Unexpected startup settings in the unmodded export.");
     const source: ExportSource = {
-        game_version, profile: "space-age", locale: "en", mods, startup_settings: {},
+        game_version, profile, locale: "en", mods, startup_settings: {},
         source_hashes: await export_hashes(output),
     };
     await fs.writeFile(source_path, JSON.stringify(source, null, 2) + "\n");

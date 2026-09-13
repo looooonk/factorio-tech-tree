@@ -1,11 +1,11 @@
-import TechGraph from "./tech-graph";
+import GameProfileGraph from "./game-profile-graph";
 import loadTechTree from "./lib/tech-tree/load-tech-tree";
 
 export default async function Home() {
-    const { nodes, edges, root_ids, manifest } = await loadTechTree();
+    const [space_age, base] = await Promise.all([loadTechTree("space-age"), loadTechTree("base")]);
     return (
         <main className="graph page">
-            <TechGraph nodes={nodes} edges={edges} root_ids={root_ids} science_packs={manifest.science_packs} game_version={manifest.game_version} />
+            <GameProfileGraph datasets={{ "space-age": space_age, base }} />
         </main>
     );
 }

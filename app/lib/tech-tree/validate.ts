@@ -1,6 +1,7 @@
-import type { TechNode } from "./types";
+import type { DataManifest, TechNode } from "./types";
+import { game_profiles, type GameProfile } from "./profiles";
 
-export function validate_nodes(nodes: TechNode[]) {
+export function validate_nodes(nodes: TechNode[], profile?: GameProfile) {
     const ids = new Set<string>();
     const positive = (value: number) => Number.isFinite(value) && value > 0;
     for (const node of nodes) {
@@ -11,8 +12,16 @@ export function validate_nodes(nodes: TechNode[]) {
         if (!node.title?.trim() || !node.description?.trim()) {
             throw new Error(`Missing title or description: ${node.id}`);
         }
-        if (!node.image_path?.startsWith("/data/technology/")) {
+        if (!/^\/data\/(base|space-age)\/technology\/[a-z0-9_-]+\.png$/.test(node.image_path) ||
+            (profile && !node.image_path.startsWith(`/data/${profile}/`))) {
             throw new Error(`Missing technology icon: ${node.id}`);
+        }
+        const asset_prefix = node.image_path.split("/technology/")[0];
+        const valid_icon = (image_path: string, kinds: string) =>
+            new RegExp(`^${asset_prefix}/(${kinds})/[a-z0-9_-]+\\.png$`).test(image_path);
+        if (node.research_science?.science_packs.some((pack) => !valid_icon(pack.image_path, "item")) ||
+            node.effects.some((effect) => effect.image_path && !valid_icon(effect.image_path, "recipe|quality|space-location"))) {
+            throw new Error(`Invalid or mixed-profile icon: ${node.id}`);
         }
         if (node.is_infinite !== (node.max_research_level === "infinite") ||
             !Number.isInteger(node.research_level) || node.research_level < 0 ||
@@ -58,5 +67,30 @@ export function validate_nodes(nodes: TechNode[]) {
             if (deps.every((dep) => !remaining.has(dep))) remaining.delete(id);
         }
         if (remaining.size === before) throw new Error(`Technology cycle: ${[...remaining.keys()].join(", ")}`);
+    }
+}
+
+export function validate_manifest(manifest: DataManifest, nodes: TechNode[], profile: GameProfile) {
+    if (manifest.schema_version !== 1 || manifest.locale !== "en" || manifest.profile !== profile ||
+        manifest.mods.map((mod) => mod.name).join() !== game_profiles[profile].mods.join() ||
+        manifest.mods.some((mod) => mod.version !== manifest.game_version) ||
+        Object.keys(manifest.startup_settings).length || manifest.technology_count !== nodes.length ||
+        manifest.locale_description_count !== nodes.filter((node) => node.description_source === "locale").length ||
+        manifest.effect_description_count !== nodes.filter((node) => node.description_source === "effects").length) {
+        throw new Error(`Invalid ${profile} game data manifest. Regenerate with npm run data:generate.`);
+    }
+    const ids = new Set(nodes.map((node) => node.id));
+    const packs = new Map(manifest.science_packs.map((pack) => [pack.id, pack]));
+    if (!packs.size || packs.size !== manifest.science_packs.length || manifest.science_packs.some((pack) =>
+        !ids.has(pack.technology_id) || !pack.name || pack.image_path !== `/data/${profile}/item/${pack.id}.png`)) {
+        throw new Error(`Invalid ${profile} science-pack metadata.`);
+    }
+    for (const node of nodes) {
+        for (const pack of node.research_science?.science_packs ?? []) {
+            const expected = packs.get(pack.id);
+            if (!expected || Object.entries(expected).some(([key, value]) => pack[key as keyof typeof expected] !== value)) {
+                throw new Error(`Mismatched science-pack metadata: ${node.id} -> ${pack.id}`);
+            }
+        }
     }
 }

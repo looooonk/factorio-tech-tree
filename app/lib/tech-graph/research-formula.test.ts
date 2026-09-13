@@ -36,8 +36,9 @@ test("rejects unsupported syntax, incomplete formulas, and invalid costs or leve
 });
 
 test("resolves every infinite formula in the shipped technology data", () => {
-    const nodes: TechNode[] = fs.readFileSync(new URL("../../../data/tech_tree.jsonl", import.meta.url), "utf8")
-        .trim().split("\n").map((line) => JSON.parse(line));
+    const nodes: TechNode[] = ["space-age", "base"].flatMap((profile) =>
+        fs.readFileSync(new URL(`../../../data/${profile}/tech_tree.jsonl`, import.meta.url), "utf8")
+            .trim().split("\n").map((line) => JSON.parse(line)));
     const infinite_nodes = nodes.filter((node) => node.is_infinite);
     assert.ok(infinite_nodes.length > 0);
     for (const node of infinite_nodes) {

@@ -17,7 +17,7 @@ export type RawTechnology = {
         ingredients: [string, number][];
     };
     research_trigger?: ResearchTrigger;
-    effects?: Omit<ResearchEffect, "description" | "image_path">[];
+    effects?: Omit<ResearchEffect, "description" | "image_path">[] | Record<string, never>;
 };
 
 export type RawData = {

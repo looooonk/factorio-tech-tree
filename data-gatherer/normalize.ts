@@ -1,6 +1,7 @@
 import type { ResearchEffect, ResearchTrigger, SciencePack, TechNode } from "../app/lib/tech-tree/types";
 import { validate_nodes } from "../app/lib/tech-tree/validate";
-import type { Locales, RawData, RawTechnology } from "./types";
+import type { GameProfile } from "../app/lib/tech-tree/profiles";
+import type { Locales, RawData } from "./types";
 
 const numeric_effects: Record<string, [string, boolean]> = {
     "artillery-range": ["Artillery shell range", true],
@@ -41,7 +42,7 @@ function bonus(value: number | boolean | undefined, percent: boolean) {
     return `${value >= 0 ? "+" : ""}${number_text(value * (percent ? 100 : 1))}${percent ? "%" : ""}`;
 }
 
-export function normalize_data(raw: RawData, locales: Locales) {
+export function normalize_data(raw: RawData, locales: Locales, profile: GameProfile) {
     const name = (kind: string, id: string | undefined): string => {
         const value = id && locales[kind]?.names[id];
         if (!value) throw new Error(`Missing ${kind} localization: ${id}`);
@@ -51,7 +52,7 @@ export function normalize_data(raw: RawData, locales: Locales) {
         /\[(item|entity|fluid|planet|technology|recipe|quality)=([^\]]+)\]/g,
         (_, kind: string, id: string) => name(kind === "planet" ? "space-location" : kind, id),
     ).replace(/\[\/?(?:color|font)(?:=[^\]]+)?\]/g, "").trim();
-    const icon = (kind: string, id: string) => `/data/${kind}/${id}.png`;
+    const icon = (kind: string, id: string) => `/data/${profile}/${kind}/${id}.png`;
 
     const science_packs: SciencePack[] = Object.values(raw.tool).map((pack) => ({
         id: pack.name,
@@ -62,7 +63,7 @@ export function normalize_data(raw: RawData, locales: Locales) {
     })).sort((a, b) => a.order.localeCompare(b.order, "en"));
     const packs_by_id = new Map(science_packs.map((pack) => [pack.id, pack]));
 
-    const effect = (source: NonNullable<RawTechnology["effects"]>[number]): ResearchEffect => {
+    const effect = (source: Omit<ResearchEffect, "description" | "image_path">): ResearchEffect => {
         let description: string;
         let image_path: string | undefined;
         switch (source.type) {
@@ -121,7 +122,12 @@ export function normalize_data(raw: RawData, locales: Locales) {
     };
 
     const nodes: TechNode[] = Object.values(raw.technology).map((tech): TechNode => {
-        const effects = (tech.effects ?? []).map(effect);
+        const source_effects = tech.effects ?? [];
+        // Factorio exports an empty Lua effects table as an object.
+        if (!Array.isArray(source_effects) && (typeof source_effects !== "object" || Object.keys(source_effects).length)) {
+            throw new Error(`Invalid research effects: ${tech.name}`);
+        }
+        const effects = Array.isArray(source_effects) ? source_effects.map(effect) : [];
         const description = text(locales.technology.descriptions[tech.name] ?? "");
         const suffix = /^(.*)-(\d+)$/.exec(tech.name);
         const is_infinite = tech.max_level === "infinite";
@@ -167,6 +173,6 @@ export function normalize_data(raw: RawData, locales: Locales) {
             throw new Error(`Unresolved description: ${node.id}`);
         }
     }
-    validate_nodes(nodes);
+    validate_nodes(nodes, profile);
     return { nodes, science_packs };
 }
